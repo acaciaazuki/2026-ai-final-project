@@ -1,9 +1,11 @@
 // 會動的物件：蛇、食物與障礙物
 import * as THREE from 'three';
+import { DIRECTION_VECTORS } from '../worlds/cube.js';
 
 const SEGMENT_SIZE = 0.86;
 const POP_MS = 250; // 新食物彈出的時間
 const VANISH_MS = 200; // 被吃掉的食物縮小消失的時間
+const TURN_MS = 70; // 立方體上蛇頭轉向的平滑時間常數，越小轉得越快
 
 // 兩點距離超過這個值，代表是穿牆，不做內插、直接出現在另一邊
 const WRAP_DISTANCE = 1.5;
@@ -68,7 +70,11 @@ export function createActors(scene, colors) {
   let obstacleCells = [];
   let ghostLayer = null; // 目前以哪一層為界切換半透明
   let world = null;
-  let heading = 0; // 蛇頭繞 y 軸的角度
+  let heading = 0; // 蛇頭繞 y 軸的角度（平面與坑洞）
+  let lastTime = null;
+  const basis = new THREE.Matrix4();
+  const targetQuaternion = new THREE.Quaternion();
+  const toVector = (v) => new THREE.Vector3(v.x, v.y, v.z);
   // 蛇頭與食物目前的中心位置，給坑洞的輔助線使用
   const headPosition = new THREE.Vector3();
   const foodPosition = new THREE.Vector3();
@@ -114,6 +120,8 @@ export function createActors(scene, colors) {
       const p = world.toPosition(next.cell);
       heading = angleOf(p.x - start.x, p.z - start.z);
     }
+    if (world.type === 'cube') head.quaternion.copy(cubeHeadQuaternion(game));
+    lastTime = null;
     foodKey = null;
     vanishAt = -Infinity;
     head.visible = true;
@@ -164,7 +172,24 @@ export function createActors(scene, colors) {
     const dx = to.x - from.x;
     const dz = to.z - from.z;
     if (from.distanceTo(to) > WRAP_DISTANCE) return { position: to, dx: 0, dz: 0 };
+
+    // 立方體跨面：先走到邊角外側，再轉下去，不會直接穿過立方體
+    const fromUp = world.toPosition(fromCell).up;
+    const toUp = world.toPosition(game.snake[i]).up;
+    if (world.type === 'cube' && fromUp !== toUp) {
+      const corner = from.clone().addScaledVector(toVector(toUp), 0.5 + SEGMENT_SIZE / 2);
+      const position = t < 0.5 ? from.lerp(corner, t * 2) : corner.lerp(to, t * 2 - 1);
+      return { position, dx, dz };
+    }
     return { position: from.lerp(to, t), dx, dz };
+  }
+
+  // 立方體上蛇頭的姿勢：模型的 +x 對準前進方向，+y 對準面朝外的方向
+  function cubeHeadQuaternion(game) {
+    const forward = toVector(DIRECTION_VECTORS[game.direction]);
+    const up = toVector(world.toPosition(game.snake[0]).up);
+    basis.makeBasis(forward, up, forward.clone().cross(up));
+    return targetQuaternion.setFromRotationMatrix(basis);
   }
 
   // 坑洞依層數上色，其他世界維持原本的顏色
@@ -177,9 +202,17 @@ export function createActors(scene, colors) {
 
     // 蛇頭
     const h = segmentPosition(game, 0, t);
-    if (h.dx !== 0 || h.dz !== 0) heading = angleOf(h.dx, h.dz);
     head.position.copy(h.position);
-    head.rotation.set(0, heading, 0);
+    if (world.type === 'cube') {
+      // 轉向與跨面時平滑轉過去；減少動態效果時直接轉到定位
+      const dt = lastTime === null ? 0 : time - lastTime;
+      const amount = reducedMotion ? 1 : 1 - Math.exp(-dt / TURN_MS);
+      head.quaternion.slerp(cubeHeadQuaternion(game), amount);
+    } else {
+      if (h.dx !== 0 || h.dz !== 0) heading = angleOf(h.dx, h.dz);
+      head.rotation.set(0, heading, 0);
+    }
+    lastTime = time;
     headPosition.copy(h.position);
     if (world.type === 'pit' && game.snake[0].z !== ghostLayer) layoutObstacles(game.snake[0].z);
     // 坑洞的蛇頭混入一點所在層的顏色，深色的頭仍然和蛇身有區別
@@ -231,6 +264,7 @@ export function createActors(scene, colors) {
     clear,
     update,
     headPosition,
+    headQuaternion: head.quaternion,
     foodPosition,
     hasFood: () => food.visible,
   };

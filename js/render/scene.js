@@ -3,7 +3,14 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { createActors } from './actors.js';
 import { createBoard } from './board.js';
-import { PIT_VIEW, fitFlatCamera, fitPitCamera, pitTarget } from './cameras.js';
+import {
+  PIT_VIEW,
+  fitCubeCamera,
+  fitFlatCamera,
+  fitPitCamera,
+  followCubeCamera,
+  pitTarget,
+} from './cameras.js';
 import { COLORS } from './colors.js';
 import { createGuides } from './guides.js';
 
@@ -25,11 +32,14 @@ export function createView(container) {
   // 天空與地面的環境光，加上一盞產生陰影的平行光
   scene.add(new THREE.HemisphereLight(0xffffff, 0x334455, 1.2));
   const sun = new THREE.DirectionalLight(0xffffff, 2.2);
-  sun.position.set(8, 20, 10);
+  const SUN_POSITION = new THREE.Vector3(8, 20, 10);
+  sun.position.copy(SUN_POSITION);
   sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048);
+  // 光線方向會跟著立方體的鏡頭改變，加上偏移避免物體表面出現陰影雜點
+  sun.shadow.normalBias = 0.03;
   Object.assign(sun.shadow.camera, { left: -14, right: 14, top: 14, bottom: -14, near: 1, far: 60 });
-  scene.add(sun);
+  scene.add(sun, sun.target);
 
   const board = createBoard(scene, COLORS);
   const actors = createActors(scene, COLORS);
@@ -55,6 +65,8 @@ export function createView(container) {
       fitPitCamera(camera, world, direction);
       controls.target.copy(pitTarget(world));
       controls.update();
+    } else if (world.type === 'cube') {
+      fitCubeCamera(camera, world);
     } else {
       fitFlatCamera(camera, world);
     }
@@ -81,6 +93,7 @@ export function createView(container) {
       board.build(world);
       guides.build(world);
       controls.enabled = world.type === 'pit';
+      sun.position.copy(SUN_POSITION);
       fitCamera();
     },
 
@@ -94,6 +107,8 @@ export function createView(container) {
     clearGame() {
       actors.clear();
       guides.hide();
+      if (world) fitCamera();
+      sun.position.copy(SUN_POSITION);
     },
 
     // 主迴圈：每一幀先呼叫 onFrame 取得目前的遊戲，再更新畫面
@@ -101,6 +116,11 @@ export function createView(container) {
       renderer.setAnimationLoop((time) => {
         const game = onFrame(time);
         actors.update(game, time, motionQuery.matches);
+        // 立方體：鏡頭跟著蛇頭；平行光放在鏡頭那一側，看到的那一面才有光
+        if (game && world.type === 'cube' && game.world === world) {
+          followCubeCamera(camera, actors.headPosition, actors.headQuaternion);
+          sun.position.copy(camera.position).normalize().multiplyScalar(20).add(SUN_POSITION.clone().multiplyScalar(0.3));
+        }
         if (game && game.world === world) {
           guides.update(actors.headPosition, actors.hasFood() ? actors.foodPosition : null, game.snake[0].z);
         }

@@ -12,7 +12,7 @@ export const WORLD_SIZES = {
 export const WORLD_SPEED_FACTORS = { flat: 1, pit: 1.4, cube: 1 };
 
 // 目前開放的世界，依主選單的顯示順序排列
-export const AVAILABLE_WORLDS = ['flat', 'pit'];
+export const AVAILABLE_WORLDS = ['flat', 'pit', 'cube'];
 
 // 蛇的初始長度
 export const START_LENGTH = 3;

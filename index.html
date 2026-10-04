@@ -42,7 +42,7 @@
         </div>
         <div id="level-info" class="hud-item" hidden>
           <span id="wrap-indicator" class="wrap-indicator" role="img"></span>
-          <span id="layer-indicator" class="hud-label" hidden></span>
+          <span id="position-indicator" class="hud-label" hidden></span>
           <span id="hud-level-code" class="hud-label"></span>
         </div>
         <button
@@ -77,6 +77,10 @@
           <label class="option">
             <input type="radio" name="world" value="pit" />
             <span data-i18n="world.pit">坑洞</span>
+          </label>
+          <label class="option">
+            <input type="radio" name="world" value="cube" />
+            <span data-i18n="world.cube">立方體</span>
           </label>
         </fieldset>
         <fieldset class="options">
@@ -116,7 +120,7 @@
       </form>
     </div>
 
-    <!-- 開局提示：顯示本關的穿牆規則，坑洞則顯示升降按鍵 -->
+    <!-- 開局提示：平面顯示本關的穿牆規則，坑洞與立方體顯示專屬的操作 -->
     <div id="intro-screen" class="overlay overlay-light" hidden>
       <div class="panel">
         <p id="intro-mode" class="panel-text"></p>

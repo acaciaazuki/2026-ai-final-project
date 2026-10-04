@@ -16,6 +16,7 @@ import { decodeLevelCode, encodeLevelCode, generateLevel } from './level.js';
 import { mulberry32, randomSeed } from './random.js';
 import { getHighScore, loadSettings, saveHighScore, saveSettings } from './storage.js';
 import { createUI } from './ui.js';
+import { createCubeWorld } from './worlds/cube.js';
 import { createFlatWorld } from './worlds/flat.js';
 import { createPitWorld } from './worlds/pit.js';
 
@@ -54,7 +55,7 @@ let game = null;
 let seed = 0;
 let lastState = null;
 let lastScore = -1;
-let lastLayer = null;
+let lastPosition = null;
 
 const currentHighScore = () => getHighScore(settings.world, settings.difficulty);
 const currentCode = () => encodeLevelCode(settings.world, settings.difficulty, seed);
@@ -73,14 +74,32 @@ function worldSpeed(world, difficulty) {
 
 // 主選單背景用的空地圖
 function previewWorld(world) {
-  return world === 'pit'
-    ? createPitWorld(WORLD_SIZES.pit)
-    : createFlatWorld({ ...WORLD_SIZES.flat, wrap: WRAP_RULES.none });
+  if (world === 'pit') return createPitWorld(WORLD_SIZES.pit);
+  if (world === 'cube') return createCubeWorld(WORLD_SIZES.cube);
+  return createFlatWorld({ ...WORLD_SIZES.flat, wrap: WRAP_RULES.none });
+}
+
+// 蛇頭目前的位置：坑洞是第幾層、立方體是哪一面；平面不需要顯示，回傳 null
+function headPosition() {
+  const head = game.snake[0];
+  if (game.world.type === 'pit') {
+    const layer = head.z + 1;
+    return {
+      key: layer,
+      hud: t('hud.layer', { layer, depth: game.world.depth }),
+      announce: t('announce.layer', { layer }),
+    };
+  }
+  if (game.world.type === 'cube') {
+    const face = t(`face.${game.world.faceOf(head)}`);
+    return { key: face, hud: t('hud.face', { face }), announce: t('announce.face', { face }) };
+  }
+  return null;
 }
 
 function refreshLevelInfo() {
   ui.setLevelInfo({ wrapRule: game.wrapRule, code: currentCode() });
-  lastLayer = null;
+  lastPosition = null;
 }
 
 // 依目前的世界、難度與種子開一局新遊戲
@@ -184,7 +203,9 @@ function handleStateChange() {
         code: currentCode(),
       });
       ui.announce(
-        game.wrapRule === null ? t('intro.pit') : t('intro.rule', { rule: t(`wrap.${game.wrapRule}`) }),
+        game.wrapRule === null
+          ? t(`intro.${settings.world}`)
+          : t('intro.rule', { rule: t(`wrap.${game.wrapRule}`) }),
       );
       break;
     case STATE.PLAYING:
@@ -220,14 +241,12 @@ function onFrame(time) {
       ui.updateHud(game.score, Math.max(game.score, currentHighScore()));
       if (game.score > 0) ui.announce(t('announce.score', { score: game.score }));
     }
-    // 坑洞：蛇頭換層時更新層數；開局時只顯示不朗讀，避免蓋掉開局提示
-    if (game.world.type === 'pit') {
-      const layer = game.snake[0].z + 1;
-      if (layer !== lastLayer) {
-        if (lastLayer !== null) ui.announce(t('announce.layer', { layer }));
-        lastLayer = layer;
-        ui.setLayer(layer, game.world.depth);
-      }
+    // 坑洞換層、立方體換面時更新分數列；開局時只顯示不朗讀，避免蓋掉開局提示
+    const position = headPosition();
+    if (position && position.key !== lastPosition) {
+      if (lastPosition !== null) ui.announce(position.announce);
+      lastPosition = position.key;
+      ui.setPosition(position.hud);
     }
   }
   return game;

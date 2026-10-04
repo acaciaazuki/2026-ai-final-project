@@ -39,7 +39,8 @@ export function createUI({ onStart, onMenuChange, onResume, onRestart, onNewLeve
   // 主選單的操作說明依世界切換；改 data-i18n 讓切換語言時也跟著更新
   function setMenuHint(world) {
     const hint = $('menu-hint');
-    hint.dataset.i18n = world === 'pit' ? 'menu.hintPit' : 'menu.hint';
+    const hints = { flat: 'menu.hint', pit: 'menu.hintPit', cube: 'menu.hintCube' };
+    hint.dataset.i18n = hints[world];
     hint.textContent = t(hint.dataset.i18n);
   }
 
@@ -91,11 +92,11 @@ export function createUI({ onStart, onMenuChange, onResume, onRestart, onNewLeve
       codeInput.focus();
     },
 
-    // 分數列上的關卡資訊：平面顯示穿牆規則圖示，坑洞顯示目前層數，再加上關卡代碼
+    // 分數列上的關卡資訊：平面顯示穿牆規則圖示，坑洞與立方體顯示目前位置，再加上關卡代碼
     setLevelInfo({ wrapRule, code }) {
       const indicator = $('wrap-indicator');
       indicator.hidden = wrapRule === null;
-      $('layer-indicator').hidden = wrapRule !== null;
+      $('position-indicator').hidden = wrapRule !== null;
       if (wrapRule !== null) {
         indicator.textContent = WRAP_ICONS[wrapRule];
         indicator.title = t(`wrap.${wrapRule}`);
@@ -105,9 +106,9 @@ export function createUI({ onStart, onMenuChange, onResume, onRestart, onNewLeve
       $('level-info').hidden = false;
     },
 
-    // 坑洞的層數，layer 從 1 開始（最上層）
-    setLayer(layer, depth) {
-      $('layer-indicator').textContent = t('hud.layer', { layer, depth });
+    // 坑洞的層數或立方體的面，text 已經翻譯好
+    setPosition(text) {
+      $('position-indicator').textContent = text;
     },
 
     showIntro({ worldType, difficulty, wrapRule, code }) {
@@ -115,9 +116,9 @@ export function createUI({ onStart, onMenuChange, onResume, onRestart, onNewLeve
         world: t(`world.${worldType}`),
         difficulty: t(`difficulty.${difficulty}`),
       });
-      // 坑洞沒有穿牆規則，改提示升降按鍵
+      // 坑洞與立方體沒有穿牆規則，改提示專屬的操作
       $('intro-rule').textContent =
-        wrapRule === null ? t('intro.pit') : t('intro.rule', { rule: t(`wrap.${wrapRule}`) });
+        wrapRule === null ? t(`intro.${worldType}`) : t('intro.rule', { rule: t(`wrap.${wrapRule}`) });
       $('intro-code').textContent = t('levelCode', { code });
       showScreen('intro');
       stage.focus({ preventScroll: true });

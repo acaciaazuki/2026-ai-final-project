@@ -1,4 +1,4 @@
-// 地圖本身：地板、格線、牆壁與可穿越的通道；坑洞則是四面坑壁與坑底
+// 地圖本身：地板、格線、牆壁與可穿越的通道；坑洞是四面坑壁與坑底；立方體是 6 個面
 import * as THREE from 'three';
 
 export function createBoard(scene, colors) {
@@ -26,6 +26,10 @@ export function createBoard(scene, colors) {
     depthWrite: false,
   });
   const rimMaterial = new THREE.MeshStandardMaterial({ color: colors.wall, roughness: 0.6 });
+  const cubeMaterials = colors.cubeFaces.map(
+    (color) => new THREE.MeshStandardMaterial({ color, roughness: 0.9 }),
+  );
+  const edgeMaterial = new THREE.LineBasicMaterial({ color: colors.edge });
 
   // 移除上一張地圖的物件並釋放它們佔用的記憶體
   function clear() {
@@ -64,6 +68,7 @@ export function createBoard(scene, colors) {
   function build(world) {
     clear();
     if (world.type === 'pit') buildPit(world);
+    else if (world.type === 'cube') buildCube(world);
     else buildFlat(world);
   }
 
@@ -174,6 +179,36 @@ export function createBoard(scene, colors) {
       mesh.castShadow = true;
       group.add(mesh);
     }
+  }
+
+  // 依立方體世界建立地圖：立方體中心在原點，每面 size×size，面與面相對的顏色相同
+  function buildCube(world) {
+    const { size } = world;
+    const half = size / 2;
+    const cube = new THREE.Mesh(new THREE.BoxGeometry(size, size, size), cubeMaterials);
+    cube.receiveShadow = true;
+    group.add(cube);
+
+    // 每一面的格線，稍微浮在表面上
+    const points = [];
+    const lift = half + 0.01;
+    for (let i = 0; i <= size; i++) {
+      const a = i - half;
+      for (const s of [1, -1]) {
+        const h = lift * s;
+        points.push(a, h, -half, a, h, half, -half, h, a, half, h, a); // 上下面
+        points.push(h, a, -half, h, a, half, h, -half, a, h, half, a); // 左右面
+        points.push(a, -half, h, a, half, h, -half, a, h, half, a, h); // 前後面
+      }
+    }
+    addLines(points);
+
+    // 邊稜線：讓面與面的交界清楚一點
+    const edges = new THREE.LineSegments(
+      new THREE.EdgesGeometry(new THREE.BoxGeometry(size + 0.04, size + 0.04, size + 0.04)),
+      edgeMaterial,
+    );
+    group.add(edges);
   }
 
   return { build };

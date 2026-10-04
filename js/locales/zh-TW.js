@@ -10,6 +10,7 @@ export default {
   'hud.highScore': '最高分',
   'hud.pause': '暫停',
   'hud.layer': '第 {layer} 層／共 {depth} 層',
+  'hud.face': '{face}',
 
   // 主選單
   'menu.title': '遊戲設定',
@@ -23,11 +24,21 @@ export default {
   'menu.highScore': '最高分：',
   'menu.start': '開始遊戲',
   'menu.hint': '方向鍵或 WASD 移動，空白鍵暫停',
+  'menu.hintCube': '← → 或 A D 左轉、右轉，空白鍵暫停',
   'menu.hintPit': '方向鍵或 WASD 移動，Q 上升、E 下降，空白鍵暫停；按住滑鼠右鍵拖曳可轉動視角',
 
   // 世界與難度
   'world.flat': '平面',
   'world.pit': '坑洞',
+  'world.cube': '立方體',
+
+  // 立方體的 6 個面
+  'face.+y': '上面',
+  'face.-y': '下面',
+  'face.+z': '前面',
+  'face.-z': '後面',
+  'face.-x': '左面',
+  'face.+x': '右面',
   'difficulty.easy': '簡單',
   'difficulty.normal': '普通',
   'difficulty.hard': '困難',
@@ -42,6 +53,7 @@ export default {
   'intro.mode': '{world}・{difficulty}',
   'intro.rule': '本關：{rule}',
   'intro.pit': 'Q 上升、E 下降',
+  'intro.cube': '← → 左轉、右轉',
   levelCode: '關卡代碼 {code}',
 
   // 暫停畫面
@@ -61,6 +73,7 @@ export default {
   // 螢幕閱讀器朗讀的訊息
   'announce.score': '分數 {score}',
   'announce.layer': '第 {layer} 層',
+  'announce.face': '進入{face}',
   'announce.over': '遊戲結束，分數 {score}',
   'announce.won': '恭喜破關，分數 {score}',
 

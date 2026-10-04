@@ -10,6 +10,7 @@ import {
 } from './config.js';
 import { SEED_RANGE, mulberry32, weightedPick } from './random.js';
 import { createFlatWorld } from './worlds/flat.js';
+import { createCubeWorld } from './worlds/cube.js';
 import { createPitWorld } from './worlds/pit.js';
 
 const WORLD_LETTERS = { flat: 'F', pit: 'B', cube: 'C' };
@@ -47,6 +48,9 @@ function buildWorld(worldType, config, rng) {
     case 'pit':
       // 坑洞四周都是牆，沒有穿牆規則
       return { world: createPitWorld(WORLD_SIZES.pit), wrapRule: null };
+    case 'cube':
+      // 立方體的每一面都和相鄰的面相連，沒有牆
+      return { world: createCubeWorld(WORLD_SIZES.cube), wrapRule: null };
     default:
       throw new Error(`未知的世界類型：${worldType}`);
   }

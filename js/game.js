@@ -64,8 +64,15 @@ export class Game {
   }
 
   // 把玩家輸入的方向放進佇列，下一次移動時才會套用
+  // 世界有提供 turn（立方體）時是相對轉向：只接受 'left'、'right'，移動時才換算成實際方向
   queueDirection(direction) {
     if (this.state !== STATE.PLAYING) return;
+    if (this.world.turn) {
+      if (direction !== 'left' && direction !== 'right') return;
+      if (this.inputQueue.length >= this.maxQueuedInputs) return;
+      this.inputQueue.push(direction);
+      return;
+    }
     if (!this.world.directions.includes(direction)) return;
 
     // 跟佇列最後一個方向比較，而不是目前的方向，
@@ -98,7 +105,8 @@ export class Game {
     if (this.state !== STATE.PLAYING) return;
 
     if (this.inputQueue.length > 0) {
-      this.direction = this.inputQueue.shift();
+      const input = this.inputQueue.shift();
+      this.direction = this.world.turn ? this.world.turn(this.snake[0], this.direction, input) : input;
     }
 
     const step = this.world.move(this.snake[0], this.direction);

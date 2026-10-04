@@ -14,6 +14,7 @@ export function fitFlatCamera(camera, world) {
   const horizontal = 2 * Math.atan(Math.tan(vertical / 2) * camera.aspect);
   const distance = radius / Math.sin(Math.min(vertical, horizontal) / 2);
 
+  camera.up.set(0, 1, 0);
   camera.position.copy(FLAT_VIEW).multiplyScalar(distance);
   camera.lookAt(0, 0, 0.6);
 }
@@ -33,6 +34,34 @@ export function fitPitCamera(camera, world, direction = PIT_VIEW) {
   const distance = radius / Math.sin(Math.min(vertical, horizontal) / 2);
 
   const target = pitTarget(world);
+  camera.up.set(0, 1, 0);
   camera.position.copy(direction).normalize().multiplyScalar(distance).add(target);
   camera.lookAt(target);
+}
+
+// 立方體在主選單的鏡頭：從斜上方看整個立方體
+const CUBE_VIEW = new THREE.Vector3(1, 0.9, 1.4).normalize();
+
+export function fitCubeCamera(camera, world) {
+  const radius = (world.size / 2) * Math.sqrt(3) * 1.05;
+  const vertical = THREE.MathUtils.degToRad(camera.fov);
+  const horizontal = 2 * Math.atan(Math.tan(vertical / 2) * camera.aspect);
+  const distance = radius / Math.sin(Math.min(vertical, horizontal) / 2);
+  camera.up.set(0, 1, 0);
+  camera.position.copy(CUBE_VIEW).multiplyScalar(distance);
+  camera.lookAt(0, 0, 0);
+}
+
+// 立方體遊戲中的跟隨鏡頭：在蛇頭的後上方，畫面的上方永遠是蛇頭的前方
+// 鏡頭的位置以蛇頭的姿勢（已經平滑轉動過）計算，所以跨面時會跟著順順地轉過去
+const FOLLOW_OFFSET = new THREE.Vector3(-4, 16, 0); // 蛇頭座標系：+x 前方、+y 面朝外
+const FOLLOW_LOOK_AHEAD = new THREE.Vector3(2, 0, 0);
+const followUp = new THREE.Vector3();
+const followTarget = new THREE.Vector3();
+
+export function followCubeCamera(camera, headPosition, headQuaternion) {
+  camera.position.copy(FOLLOW_OFFSET).applyQuaternion(headQuaternion).add(headPosition);
+  followTarget.copy(FOLLOW_LOOK_AHEAD).applyQuaternion(headQuaternion).add(headPosition);
+  camera.up.copy(followUp.set(0, 1, 0).applyQuaternion(headQuaternion));
+  camera.lookAt(followTarget);
 }

@@ -1,16 +1,60 @@
-/* 介面配色：之後由 3D 主題覆寫這些變數 */
+/* 介面配色：由 <html data-theme> 切換，與 3D 主題一致 */
+/* 簡約扁平（預設）：淺色 */
 :root {
-  --color-bg: #15181c;
-  --color-surface: #252a31;
-  --color-text: #e8eaed;
-  --color-muted: #a0a7af;
-  --color-accent: #66bb6a;
-  --color-accent-text: #0d1a0e;
-  --color-border: #3a414a;
-  --color-overlay: rgba(21, 24, 28, 0.6);
-  --color-error: #ff8a80;
+  --color-bg: #f2f4f6;
+  --color-surface: #ffffff;
+  --color-text: #1d2430;
+  --color-muted: #5b6675;
+  --color-accent: #1f6feb;
+  --color-accent-text: #ffffff;
+  --color-border: #c3cbd3;
+  --color-overlay: rgba(242, 244, 246, 0.45);
+  --color-error: #c62828;
   --font-ui: system-ui, -apple-system, "PingFang TC", "Microsoft JhengHei", sans-serif;
   --radius: 8px;
+  --border-width: 1px;
+  --panel-shadow: none;
+}
+
+/* 簡約扁平：跟著系統的深色模式 */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="neon"]):not([data-theme="contrast"]) {
+    --color-bg: #15181c;
+    --color-surface: #252a31;
+    --color-text: #e8eaed;
+    --color-muted: #a0a7af;
+    --color-accent: #66bb6a;
+    --color-accent-text: #0d1a0e;
+    --color-border: #3a414a;
+    --color-overlay: rgba(21, 24, 28, 0.6);
+    --color-error: #ff8a80;
+  }
+}
+
+:root[data-theme="neon"] {
+  --color-bg: #070b14;
+  --color-surface: #0c1626;
+  --color-text: #e6f7ff;
+  --color-muted: #8fb3c4;
+  --color-accent: #ff3fd0;
+  --color-accent-text: #14001a;
+  --color-border: #1b4a5c;
+  --color-overlay: rgba(7, 11, 20, 0.65);
+  --color-error: #ff8a80;
+  --panel-shadow: 0 0 18px rgba(55, 230, 255, 0.25);
+}
+
+:root[data-theme="contrast"] {
+  --color-bg: #000000;
+  --color-surface: #000000;
+  --color-text: #ffffff;
+  --color-muted: #e0e0e0;
+  --color-accent: #ffff00;
+  --color-accent-text: #000000;
+  --color-border: #ffffff;
+  --color-overlay: rgba(0, 0, 0, 0.82);
+  --color-error: #ff6b6b;
+  --border-width: 2px;
 }
 
 * {
@@ -25,6 +69,12 @@ body {
   background: var(--color-bg);
   color: var(--color-text);
   font-family: var(--font-ui);
+  /* 手機：避免下拉重新整理、選取文字、點兩下縮放與點擊時的灰色閃爍 */
+  overscroll-behavior: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 /* 3D 畫面鋪滿整個視窗，介面疊在上面 */
@@ -32,6 +82,8 @@ body {
   position: fixed;
   inset: 0;
   outline: none;
+  /* 滑動由程式處理，不讓瀏覽器捲動或縮放 */
+  touch-action: none;
 }
 
 .stage canvas {
@@ -52,7 +104,8 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 8px 16px;
-  padding: 12px 16px;
+  padding: calc(12px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) 12px
+    calc(16px + env(safe-area-inset-left));
   pointer-events: none;
 }
 
@@ -104,9 +157,9 @@ body {
 }
 
 .icon-button {
-  min-width: 40px;
-  min-height: 36px;
-  border: 1px solid var(--color-border);
+  min-width: 44px;
+  min-height: 44px;
+  border: var(--border-width) solid var(--color-border);
   border-radius: var(--radius);
   background: var(--color-surface);
   color: var(--color-text);
@@ -121,7 +174,7 @@ body {
 
 .lang-button {
   padding: 6px 12px;
-  border: 1px solid var(--color-border);
+  border: var(--border-width) solid var(--color-border);
   border-radius: var(--radius);
   background: var(--color-surface);
   color: var(--color-text);
@@ -142,7 +195,7 @@ body {
   z-index: 1;
   display: flex;
   overflow-y: auto;
-  padding: 72px 16px 16px;
+  padding: calc(72px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom));
   background: var(--color-overlay);
 }
 
@@ -163,10 +216,11 @@ body {
   margin: auto;
   width: min(100%, 300px);
   padding: 20px;
-  border: 1px solid var(--color-border);
+  border: var(--border-width) solid var(--color-border);
   border-radius: var(--radius);
   background: var(--color-surface);
   text-align: center;
+  box-shadow: var(--panel-shadow);
 }
 
 .panel-title {
@@ -217,7 +271,7 @@ body {
 .option span {
   display: block;
   padding: 8px 4px;
-  border: 1px solid var(--color-border);
+  border: var(--border-width) solid var(--color-border);
   border-radius: var(--radius);
   cursor: pointer;
 }
@@ -242,8 +296,10 @@ body {
 }
 
 .field input {
+  -webkit-user-select: text;
+  user-select: text;
   padding: 8px;
-  border: 1px solid var(--color-border);
+  border: var(--border-width) solid var(--color-border);
   border-radius: var(--radius);
   background: var(--color-bg);
   color: var(--color-text);
@@ -264,7 +320,7 @@ body {
 /* 按鈕 */
 .button {
   padding: 10px 16px;
-  border: 1px solid var(--color-border);
+  border: var(--border-width) solid var(--color-border);
   border-radius: var(--radius);
   background: var(--color-surface);
   color: var(--color-text);
@@ -301,16 +357,155 @@ body {
   white-space: nowrap;
 }
 
+/* 手機上的上升、下降按鈕（坑洞），放在畫面下方左右兩側方便拇指操作 */
+.touch-controls {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  display: flex;
+  justify-content: space-between;
+  padding: 16px calc(20px + env(safe-area-inset-right)) calc(20px + env(safe-area-inset-bottom))
+    calc(20px + env(safe-area-inset-left));
+  pointer-events: none;
+}
+
+.touch-controls[hidden] {
+  display: none;
+}
+
+.touch-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: 84px;
+  height: 84px;
+  border: var(--border-width) solid var(--color-border);
+  border-radius: 50%;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 1.4rem;
+  line-height: 1;
+  opacity: 0.88;
+  cursor: pointer;
+  pointer-events: auto;
+  touch-action: none;
+}
+
+.touch-button span {
+  font-size: 0.8rem;
+}
+
+.touch-button:active {
+  background: var(--color-accent);
+  color: var(--color-accent-text);
+}
+
+.touch-button:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* 窄螢幕（直向手機）：標題縮小，分數列換到第二行 */
 @media (max-width: 480px) {
   .title {
     font-size: 1.2rem;
   }
 
+  .topbar {
+    gap: 6px 8px;
+  }
+
   .hud {
-    gap: 4px 12px;
+    order: 3;
+    width: 100%;
+    justify-content: space-between;
+    gap: 4px 10px;
+    padding: 4px 10px;
   }
 
   .overlay {
-    padding-top: 110px;
+    padding-top: calc(110px + env(safe-area-inset-top));
   }
+
+  .panel {
+    width: min(100%, 340px);
+  }
+}
+
+/* 橫向手機：高度很矮，縮小間距並讓面板內容可以捲動 */
+@media (max-height: 500px) {
+  .overlay {
+    padding-top: calc(56px + env(safe-area-inset-top));
+  }
+
+  .panel {
+    gap: 8px;
+    padding: 12px;
+    margin: 0 auto;
+  }
+
+  .touch-button {
+    width: 68px;
+    height: 68px;
+  }
+}
+
+/* 顯示設定：主題、畫質、減少動態效果 */
+.display-settings {
+  text-align: left;
+}
+
+.display-settings summary {
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.display-settings summary:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.display-settings .setting-label {
+  margin: 10px 0 4px;
+  color: var(--color-muted);
+  font-size: 0.85rem;
+}
+
+.display-settings .options {
+  flex-wrap: wrap;
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  cursor: pointer;
+}
+
+.checkbox input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--color-accent);
+}
+
+.checkbox input:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* 減少動態效果：介面也不做過場動畫 */
+:root[data-motion="reduced"] * {
+  transition: none !important;
+  animation: none !important;
+  scroll-behavior: auto !important;
+}
+
+.display-settings .option span {
+  text-align: center;
 }

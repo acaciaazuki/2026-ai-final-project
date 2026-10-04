@@ -4,25 +4,20 @@
 
 import * as THREE from 'three';
 
-export function createBoard(scene, colors) {
+export function createBoard(scene, initialColors) {
   const group = new THREE.Group();
   scene.add(group);
 
   // 共用的幾何與材質（換關卡時只重建物件，不重建這些）
   const wallGeometry = new THREE.BoxGeometry(0.94, 0.9, 0.94);
-  const wallMaterial = new THREE.MeshStandardMaterial({ color: colors.wall, roughness: 0.6 });
+  const wallMaterial = new THREE.MeshStandardMaterial({ roughness: 0.6 });
   const passageGeometry = new THREE.BoxGeometry(0.7, 0.06, 0.2);
-  const passageMaterial = new THREE.MeshStandardMaterial({
-    color: colors.passage,
-    emissive: colors.passage,
-    emissiveIntensity: 1.1,
-  });
-  const floorMaterial = new THREE.MeshStandardMaterial({ color: colors.floor, roughness: 0.9 });
-  const gridMaterial = new THREE.LineBasicMaterial({ color: colors.grid });
+  const passageMaterial = new THREE.MeshStandardMaterial();
+  const floorMaterial = new THREE.MeshStandardMaterial({ roughness: 0.9 });
+  const gridMaterial = new THREE.LineBasicMaterial();
 
   // 坑壁半透明，才看得到貼著牆的蛇與障礙物
   const pitWallMaterial = new THREE.MeshStandardMaterial({
-    color: colors.wall,
     roughness: 0.8,
     transparent: true,
     opacity: 0.18,
@@ -30,11 +25,29 @@ export function createBoard(scene, colors) {
     depthWrite: false,
   });
 
-  const rimMaterial = new THREE.MeshStandardMaterial({ color: colors.wall, roughness: 0.6 });
-  const cubeMaterials = colors.cubeFaces.map(
-    (color) => new THREE.MeshStandardMaterial({ color, roughness: 0.9 }),
+  const rimMaterial = new THREE.MeshStandardMaterial({ roughness: 0.6 });
+  const cubeMaterials = Array.from(
+    { length: 6 },
+    () => new THREE.MeshStandardMaterial({ roughness: 0.9 }),
   );
-  const edgeMaterial = new THREE.LineBasicMaterial({ color: colors.edge });
+  const edgeMaterial = new THREE.LineBasicMaterial();
+
+  // 換主題時只更新材質的顏色，不用重建地圖
+  function applyTheme(colors) {
+    wallMaterial.color.set(colors.wall);
+    wallMaterial.emissive.set(colors.glow ? colors.wall : 0x000000);
+    wallMaterial.emissiveIntensity = colors.glow * 0.25;
+    passageMaterial.color.set(colors.passage);
+    passageMaterial.emissive.set(colors.passage);
+    passageMaterial.emissiveIntensity = 1.1 + colors.glow;
+    floorMaterial.color.set(colors.floor);
+    gridMaterial.color.set(colors.grid);
+    pitWallMaterial.color.set(colors.wall);
+    rimMaterial.color.set(colors.wall);
+    cubeMaterials.forEach((material, i) => material.color.set(colors.cubeFaces[i]));
+    edgeMaterial.color.set(colors.edge);
+  }
+  applyTheme(initialColors);
 
   // ============ 工具函式 ============
 
@@ -313,5 +326,5 @@ export function createBoard(scene, colors) {
   }
 
   // ============ API ============
-  return { build };
+  return { build, applyTheme };
 }

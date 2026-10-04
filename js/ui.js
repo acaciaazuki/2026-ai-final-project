@@ -6,7 +6,7 @@ const $ = (id) => document.getElementById(id);
 // 穿牆規則的小圖示
 const WRAP_ICONS = { both: '✥', vertical: '⇅', horizontal: '⇆', none: '▣' };
 
-export function createUI({ onStart, onMenuChange, onResume, onRestart, onNewLevel, onMenu, onPause }) {
+export function createUI({ onStart, onMenuChange, onDisplayChange, onResume, onRestart, onNewLevel, onMenu, onPause }) {
   const screens = {
     menu: $('menu-screen'),
     intro: $('intro-screen'),
@@ -18,6 +18,10 @@ export function createUI({ onStart, onMenuChange, onResume, onRestart, onNewLeve
   const codeError = $('level-code-error');
   const stage = $('stage');
   const pauseButton = $('pause-button');
+  const touchControls = $('touch-controls');
+  // 觸控裝置的操作說明不同
+  const isTouch = window.matchMedia('(pointer: coarse)').matches;
+  let pitActive = false; // 目前這局是否為坑洞（才顯示上升、下降按鈕）
 
   // 只顯示指定的畫面；name 為 null 時全部隱藏（遊戲進行中）
   function showScreen(name) {
@@ -25,6 +29,7 @@ export function createUI({ onStart, onMenuChange, onResume, onRestart, onNewLeve
       el.hidden = key !== name;
     }
     pauseButton.hidden = name !== null;
+    touchControls.hidden = name !== null || !pitActive;
   }
 
   function readMenu() {
@@ -36,10 +41,21 @@ export function createUI({ onStart, onMenuChange, onResume, onRestart, onNewLeve
     };
   }
 
+  function readDisplay() {
+    const data = new FormData(menuForm);
+    return {
+      theme: data.get('theme'),
+      quality: data.get('quality'),
+      reducedMotion: data.get('reducedMotion') !== null,
+    };
+  }
+
   // 主選單的操作說明依世界切換；改 data-i18n 讓切換語言時也跟著更新
   function setMenuHint(world) {
     const hint = $('menu-hint');
-    const hints = { flat: 'menu.hint', pit: 'menu.hintPit', cube: 'menu.hintCube' };
+    const hints = isTouch
+      ? { flat: 'menu.hintTouch', pit: 'menu.hintPitTouch', cube: 'menu.hintCubeTouch' }
+      : { flat: 'menu.hint', pit: 'menu.hintPit', cube: 'menu.hintCube' };
     hint.dataset.i18n = hints[world];
     hint.textContent = t(hint.dataset.i18n);
   }
@@ -48,7 +64,12 @@ export function createUI({ onStart, onMenuChange, onResume, onRestart, onNewLeve
     e.preventDefault();
     onStart(readMenu());
   });
-  menuForm.addEventListener('change', () => {
+  menuForm.addEventListener('change', (e) => {
+    // 顯示設定立即生效，不影響世界與難度的選擇
+    if (e.target.closest('.display-settings')) {
+      onDisplayChange(readDisplay());
+      return;
+    }
     const choice = readMenu();
     setMenuHint(choice.world);
     onMenuChange(choice);
@@ -66,9 +87,17 @@ export function createUI({ onStart, onMenuChange, onResume, onRestart, onNewLeve
   pauseButton.addEventListener('click', onPause);
 
   return {
-    showMenu(settings, highScore) {
+    // 目前這局的世界；回主選單時傳入 null
+    setActiveWorld(type) {
+      pitActive = type === 'pit';
+    },
+
+    showMenu(settings, highScore, display) {
       menuForm.elements.world.value = settings.world;
       menuForm.elements.difficulty.value = settings.difficulty;
+      menuForm.elements.theme.value = display.theme;
+      menuForm.elements.quality.value = display.quality;
+      menuForm.elements.reducedMotion.checked = display.reducedMotion;
       setMenuHint(settings.world);
       $('menu-high-score').textContent = highScore;
       // 清空上次輸入的代碼，避免沒注意到而一直重玩同一關

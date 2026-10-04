@@ -18,13 +18,13 @@ function placeOnCell(target, p, height) {
   return target.set(p.x + p.up.x * height, p.y + p.up.y * height, p.z + p.up.z * height);
 }
 
-export function createActors(scene, colors) {
+export function createActors(scene, initialColors) {
   const segmentGeometry = new THREE.BoxGeometry(SEGMENT_SIZE, SEGMENT_SIZE, SEGMENT_SIZE);
   // 蛇身的顏色由每一節的 instance color 決定，材質本身用白色
   const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5 });
   const layerColors = LAYER_COLORS.map((c) => new THREE.Color(c));
-  const bodyColor = new THREE.Color(colors.snakeBody);
-  const headColor = new THREE.Color(colors.snakeHead);
+  const bodyColor = new THREE.Color();
+  const headColor = new THREE.Color();
   const tint = new THREE.Color();
   const obstacleGeometry = new THREE.BoxGeometry(0.92, 0.92, 0.92);
   // 障礙物的顏色同樣由 instance color 決定；坑洞裡比蛇頭高的障礙物改用半透明的材質
@@ -36,21 +36,21 @@ export function createActors(scene, colors) {
     opacity: 0.22,
     depthWrite: false,
   });
-  const obstacleColor = new THREE.Color(colors.obstacle);
-  const backgroundColor = new THREE.Color(colors.background);
+  const obstacleColor = new THREE.Color();
+  const backgroundColor = new THREE.Color();
   const foodGeometry = new THREE.SphereGeometry(0.36, 24, 16);
-  const foodMaterial = new THREE.MeshStandardMaterial({ color: colors.food, roughness: 0.35 });
+  const foodMaterial = new THREE.MeshStandardMaterial({ roughness: 0.35 });
 
   // 蛇頭：方塊加兩隻眼睛，模型的前方是 +x
   const head = new THREE.Group();
-  const headMaterial = new THREE.MeshStandardMaterial({ color: colors.snakeHead });
+  const headMaterial = new THREE.MeshStandardMaterial();
   const headBox = new THREE.Mesh(segmentGeometry, headMaterial);
   headBox.castShadow = true;
   head.add(headBox);
   const eyeGeometry = new THREE.SphereGeometry(0.12, 12, 8);
   const pupilGeometry = new THREE.SphereGeometry(0.06, 8, 6);
-  const eyeMaterial = new THREE.MeshStandardMaterial({ color: colors.eye });
-  const pupilMaterial = new THREE.MeshStandardMaterial({ color: colors.pupil });
+  const eyeMaterial = new THREE.MeshStandardMaterial();
+  const pupilMaterial = new THREE.MeshStandardMaterial();
   for (const side of [-1, 1]) {
     const eye = new THREE.Mesh(eyeGeometry, eyeMaterial);
     eye.position.set(0.36, 0.2, 0.2 * side);
@@ -82,6 +82,28 @@ export function createActors(scene, colors) {
   let foodBornAt = -Infinity;
   let vanishAt = -Infinity;
   const dummy = new THREE.Object3D();
+
+  // 換主題：更新材質與顏色；蛇身每一幀都會重設顏色，只有障礙物需要重新上色
+  function applyTheme(colors) {
+    bodyColor.set(colors.snakeBody);
+    headColor.set(colors.snakeHead);
+    obstacleColor.set(colors.obstacle);
+    backgroundColor.set(colors.background);
+    headMaterial.color.copy(headColor);
+    eyeMaterial.color.set(colors.eye);
+    pupilMaterial.color.set(colors.pupil);
+    foodMaterial.color.set(colors.food);
+    // 發光主題：蛇頭與食物帶自發光，Bloom 才有東西可以亮
+    const glow = colors.glow;
+    headMaterial.emissive.copy(headColor);
+    headMaterial.emissiveIntensity = glow * 0.5;
+    foodMaterial.emissive.set(colors.food);
+    foodMaterial.emissiveIntensity = glow;
+    bodyMaterial.emissive.set(colors.snakeBody);
+    bodyMaterial.emissiveIntensity = glow * 0.35;
+    if (obstacles) layoutObstacles(ghostLayer ?? 0);
+  }
+  applyTheme(initialColors);
 
   function removeInstanced(mesh) {
     if (!mesh) return;
@@ -260,6 +282,7 @@ export function createActors(scene, colors) {
 
   clear();
   return {
+    applyTheme,
     setGame,
     clear,
     update,

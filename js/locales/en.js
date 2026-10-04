@@ -27,6 +27,23 @@ export default {
   'menu.hintPit':
     'Arrow keys or WASD to move, Q to rise, E to sink, Space to pause. Right-drag to rotate the view',
 
+  'menu.hintTouch': 'Swipe on the screen to turn. Tap the button at the top to pause',
+  'menu.hintPitTouch': 'Swipe to move. Use the buttons below to rise or sink. Two-finger drag rotates the view',
+  'menu.hintCubeTouch': 'Tap the left half of the screen to turn left, the right half to turn right',
+  'touch.rise': 'Rise',
+  'touch.sink': 'Sink',
+
+  // Display settings
+  'display.title': 'Display settings',
+  'display.theme': 'Theme',
+  'display.quality': 'Quality',
+  'display.reducedMotion': 'Reduce motion',
+  'theme.flat': 'Flat',
+  'theme.neon': 'Neon',
+  'theme.contrast': 'High contrast',
+  'quality.high': 'High',
+  'quality.low': 'Low',
+
   // 世界與難度
   'world.flat': 'Flat',
   'world.pit': 'Pit',

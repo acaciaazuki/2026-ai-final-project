@@ -2,8 +2,9 @@
 <html lang="zh-TW">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>貪食蛇 3D</title>
+    <link rel="icon" href="data:," />
     <link rel="stylesheet" href="css/style.css" />
     <!-- three.js 放在專案裡，用 import map 讓程式可以直接 import 'three' -->
     <script type="importmap">
@@ -112,6 +113,39 @@
           />
           <p id="level-code-error" class="error" hidden></p>
         </div>
+        <details class="display-settings">
+          <summary data-i18n="display.title">顯示設定</summary>
+          <p class="setting-label" data-i18n="display.theme">主題</p>
+          <div class="options" role="group" data-i18n-aria-label="display.theme" aria-label="主題">
+            <label class="option">
+              <input type="radio" name="theme" value="flat" />
+              <span data-i18n="theme.flat">簡約扁平</span>
+            </label>
+            <label class="option">
+              <input type="radio" name="theme" value="neon" />
+              <span data-i18n="theme.neon">霓虹</span>
+            </label>
+            <label class="option">
+              <input type="radio" name="theme" value="contrast" />
+              <span data-i18n="theme.contrast">高對比</span>
+            </label>
+          </div>
+          <p class="setting-label" data-i18n="display.quality">畫質</p>
+          <div class="options" role="group" data-i18n-aria-label="display.quality" aria-label="畫質">
+            <label class="option">
+              <input type="radio" name="quality" value="high" />
+              <span data-i18n="quality.high">高</span>
+            </label>
+            <label class="option">
+              <input type="radio" name="quality" value="low" />
+              <span data-i18n="quality.low">低</span>
+            </label>
+          </div>
+          <label class="checkbox">
+            <input type="checkbox" name="reducedMotion" />
+            <span data-i18n="display.reducedMotion">減少動態效果</span>
+          </label>
+        </details>
         <p class="panel-text">
           <span data-i18n="menu.highScore">最高分：</span><span id="menu-high-score">0</span>
         </p>
@@ -174,6 +208,16 @@
           這個瀏覽器不支援 WebGL 2，請改用最新版的 Chrome、Edge、Firefox 或 Safari。
         </p>
       </div>
+    </div>
+
+    <!-- 手機操作按鈕：只有坑洞需要（上升、下降） -->
+    <div id="touch-controls" class="touch-controls" hidden>
+      <button id="rise-button" type="button" class="touch-button" aria-label="上升" data-i18n-aria-label="touch.rise">
+        ▲<span data-i18n="touch.rise">上升</span>
+      </button>
+      <button id="sink-button" type="button" class="touch-button" aria-label="下降" data-i18n-aria-label="touch.sink">
+        ▼<span data-i18n="touch.sink">下降</span>
+      </button>
     </div>
 
     <!-- 給螢幕閱讀器朗讀的訊息 -->

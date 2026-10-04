@@ -4,7 +4,7 @@ import * as THREE from 'three';
 
 const OFFSET = 0.02; // 離坑底、坑壁一點距離，避免和表面重疊閃爍
 
-export function createGuides(scene, colors) {
+export function createGuides(scene, initialColors) {
   const group = new THREE.Group();
   group.visible = false;
   scene.add(group);
@@ -22,14 +22,14 @@ export function createGuides(scene, colors) {
 
   // 蛇頭：坑底與後牆上的方形投影，加一條垂直虛線
   const squareGeometry = new THREE.PlaneGeometry(0.86, 0.86);
-  const headMaterial = overlay(colors.snakeHead, 0.55);
+  const headMaterial = overlay(0xffffff, 0.55);
   const headFloor = new THREE.Mesh(squareGeometry, headMaterial);
   headFloor.rotation.x = -Math.PI / 2;
   const headWall = new THREE.Mesh(squareGeometry, headMaterial);
 
   // 食物：坑底與後牆上的圓環投影，加一條垂直虛線
   const ringGeometry = new THREE.RingGeometry(0.26, 0.38, 24);
-  const foodMaterial = overlay(colors.food, 0.7);
+  const foodMaterial = overlay(0xffffff, 0.7);
   const foodFloor = new THREE.Mesh(ringGeometry, foodMaterial);
   foodFloor.rotation.x = -Math.PI / 2;
   const foodWall = new THREE.Mesh(ringGeometry, foodMaterial);
@@ -39,21 +39,32 @@ export function createGuides(scene, colors) {
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(new Float32Array(6), 3));
     return new THREE.Line(geometry, material);
   };
-  const headLine = verticalLine(dashed(colors.snakeHead));
-  const foodLine = verticalLine(dashed(colors.food));
+  const headLine = verticalLine(dashed(0xffffff));
+  const foodLine = verticalLine(dashed(0xffffff));
 
   // 蛇頭所在的那一層：一片半透明的薄層，加上沿著坑壁的外框
-  const sliceMaterial = overlay(colors.snakeBody, 0.08);
+  const sliceMaterial = overlay(0xffffff, 0.08);
   const slice = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), sliceMaterial);
   slice.rotation.x = -Math.PI / 2;
   const sliceEdge = new THREE.LineLoop(
     new THREE.BufferGeometry(),
-    new THREE.LineBasicMaterial({ color: colors.snakeBody, transparent: true, opacity: 0.6 }),
+    new THREE.LineBasicMaterial({ transparent: true, opacity: 0.6 }),
   );
 
   group.add(headFloor, headWall, foodFloor, foodWall, headLine, foodLine, slice, sliceEdge);
 
   let world = null;
+
+  // 換主題：只更新顏色
+  function applyTheme(colors) {
+    headMaterial.color.set(colors.snakeHead);
+    headLine.material.color.set(colors.snakeHead);
+    foodMaterial.color.set(colors.food);
+    foodLine.material.color.set(colors.food);
+    sliceMaterial.color.set(colors.snakeBody);
+    sliceEdge.material.color.set(colors.snakeBody);
+  }
+  applyTheme(initialColors);
 
   function setLine(lineObject, from, toY) {
     const position = lineObject.geometry.attributes.position;
@@ -66,6 +77,8 @@ export function createGuides(scene, colors) {
   }
 
   return {
+    applyTheme,
+
     // 換地圖時呼叫：只有坑洞需要輔助
     build(next) {
       world = next.type === 'pit' ? next : null;

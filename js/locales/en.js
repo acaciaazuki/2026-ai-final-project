@@ -27,6 +27,17 @@ export default {
   'menu.hintPit':
     'Arrow keys or WASD to move, Q to rise, E to sink, Space to pause. Right-drag to rotate the view',
 
+  // Display settings
+  'display.title': 'Display settings',
+  'display.theme': 'Theme',
+  'display.quality': 'Quality',
+  'display.reducedMotion': 'Reduce motion',
+  'theme.flat': 'Flat',
+  'theme.neon': 'Neon',
+  'theme.contrast': 'High contrast',
+  'quality.high': 'High',
+  'quality.low': 'Low',
+
   // 世界與難度
   'world.flat': 'Flat',
   'world.pit': 'Pit',

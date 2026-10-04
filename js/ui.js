@@ -6,7 +6,7 @@ const $ = (id) => document.getElementById(id);
 // 穿牆規則的小圖示
 const WRAP_ICONS = { both: '✥', vertical: '⇅', horizontal: '⇆', none: '▣' };
 
-export function createUI({ onStart, onMenuChange, onResume, onRestart, onNewLevel, onMenu, onPause }) {
+export function createUI({ onStart, onMenuChange, onDisplayChange, onResume, onRestart, onNewLevel, onMenu, onPause }) {
   const screens = {
     menu: $('menu-screen'),
     intro: $('intro-screen'),
@@ -36,6 +36,15 @@ export function createUI({ onStart, onMenuChange, onResume, onRestart, onNewLeve
     };
   }
 
+  function readDisplay() {
+    const data = new FormData(menuForm);
+    return {
+      theme: data.get('theme'),
+      quality: data.get('quality'),
+      reducedMotion: data.get('reducedMotion') !== null,
+    };
+  }
+
   // 主選單的操作說明依世界切換；改 data-i18n 讓切換語言時也跟著更新
   function setMenuHint(world) {
     const hint = $('menu-hint');
@@ -48,7 +57,12 @@ export function createUI({ onStart, onMenuChange, onResume, onRestart, onNewLeve
     e.preventDefault();
     onStart(readMenu());
   });
-  menuForm.addEventListener('change', () => {
+  menuForm.addEventListener('change', (e) => {
+    // 顯示設定立即生效，不影響世界與難度的選擇
+    if (e.target.closest('.display-settings')) {
+      onDisplayChange(readDisplay());
+      return;
+    }
     const choice = readMenu();
     setMenuHint(choice.world);
     onMenuChange(choice);
@@ -66,9 +80,12 @@ export function createUI({ onStart, onMenuChange, onResume, onRestart, onNewLeve
   pauseButton.addEventListener('click', onPause);
 
   return {
-    showMenu(settings, highScore) {
+    showMenu(settings, highScore, display) {
       menuForm.elements.world.value = settings.world;
       menuForm.elements.difficulty.value = settings.difficulty;
+      menuForm.elements.theme.value = display.theme;
+      menuForm.elements.quality.value = display.quality;
+      menuForm.elements.reducedMotion.checked = display.reducedMotion;
       setMenuHint(settings.world);
       $('menu-high-score').textContent = highScore;
       // 清空上次輸入的代碼，避免沒注意到而一直重玩同一關

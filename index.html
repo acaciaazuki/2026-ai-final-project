@@ -112,6 +112,39 @@
           />
           <p id="level-code-error" class="error" hidden></p>
         </div>
+        <details class="display-settings">
+          <summary data-i18n="display.title">顯示設定</summary>
+          <p class="setting-label" data-i18n="display.theme">主題</p>
+          <div class="options" role="group" data-i18n-aria-label="display.theme" aria-label="主題">
+            <label class="option">
+              <input type="radio" name="theme" value="flat" />
+              <span data-i18n="theme.flat">簡約扁平</span>
+            </label>
+            <label class="option">
+              <input type="radio" name="theme" value="neon" />
+              <span data-i18n="theme.neon">霓虹</span>
+            </label>
+            <label class="option">
+              <input type="radio" name="theme" value="contrast" />
+              <span data-i18n="theme.contrast">高對比</span>
+            </label>
+          </div>
+          <p class="setting-label" data-i18n="display.quality">畫質</p>
+          <div class="options" role="group" data-i18n-aria-label="display.quality" aria-label="畫質">
+            <label class="option">
+              <input type="radio" name="quality" value="high" />
+              <span data-i18n="quality.high">高</span>
+            </label>
+            <label class="option">
+              <input type="radio" name="quality" value="low" />
+              <span data-i18n="quality.low">低</span>
+            </label>
+          </div>
+          <label class="checkbox">
+            <input type="checkbox" name="reducedMotion" />
+            <span data-i18n="display.reducedMotion">減少動態效果</span>
+          </label>
+        </details>
         <p class="panel-text">
           <span data-i18n="menu.highScore">最高分：</span><span id="menu-high-score">0</span>
         </p>

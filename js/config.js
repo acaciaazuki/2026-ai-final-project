@@ -70,3 +70,15 @@ export const MAX_LEVEL_ATTEMPTS = 50;
 
 // 每關開始前顯示關卡規則的時間（毫秒）
 export const LEVEL_INTRO_MS = 1500;
+
+// 畫質設定
+// shadows：是否產生陰影（含陰影貼圖大小）
+// bloom：主題有發光效果時，是否啟用 Bloom
+// maxPixelRatio：解析度倍率上限，手機上調低可以省下大量繪圖量
+export const QUALITY_LEVELS = {
+  high: { shadows: true, shadowMapSize: 2048, bloom: true, maxPixelRatio: 2 },
+  low: { shadows: false, shadowMapSize: 512, bloom: false, maxPixelRatio: 1 },
+};
+
+// Bloom 參數：strength 強度、radius 擴散範圍、threshold 亮度門檻
+export const BLOOM = { strength: 0.9, radius: 0.5, threshold: 0.35 };

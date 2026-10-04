@@ -14,18 +14,64 @@ import { LANGUAGES, detectLanguage, getLanguage, setLanguage, t } from './i18n.j
 import { bindKeyboard } from './input.js';
 import { decodeLevelCode, encodeLevelCode, generateLevel } from './level.js';
 import { mulberry32, randomSeed } from './random.js';
+import { QUALITY_NAMES, detectQuality } from './render/quality.js';
 import { getHighScore, loadSettings, saveHighScore, saveSettings } from './storage.js';
+import { DEFAULT_THEME, THEME_NAMES, resolveTheme } from './themes/index.js';
 import { createUI } from './ui.js';
 import { createCubeWorld } from './worlds/cube.js';
 import { createFlatWorld } from './worlds/flat.js';
 import { createPitWorld } from './worlds/pit.js';
 
-const DEFAULT_SETTINGS = { language: null, world: 'flat', difficulty: 'normal' };
+// quality、reducedMotion 為 null 代表尚未選擇：畫質依裝置自動決定，動態效果跟著系統設定
+const DEFAULT_SETTINGS = {
+  language: null,
+  world: 'flat',
+  difficulty: 'normal',
+  theme: DEFAULT_THEME,
+  quality: null,
+  reducedMotion: null,
+};
 const settings = loadSettings(DEFAULT_SETTINGS);
 // 儲存的值可能來自舊版本或被手動修改過，不合法的值改回預設
 if (!LANGUAGES.includes(settings.language)) settings.language = null;
 if (!AVAILABLE_WORLDS.includes(settings.world)) settings.world = DEFAULT_SETTINGS.world;
 if (!(settings.difficulty in DIFFICULTIES)) settings.difficulty = DEFAULT_SETTINGS.difficulty;
+if (!THEME_NAMES.includes(settings.theme)) settings.theme = DEFAULT_THEME;
+if (!QUALITY_NAMES.includes(settings.quality)) settings.quality = null;
+if (typeof settings.reducedMotion !== 'boolean') settings.reducedMotion = null;
+
+// ---------- 主題、畫質與動態效果 ----------
+const darkQuery = window.matchMedia('(prefers-color-scheme: dark)');
+const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+const autoQuality = detectQuality({
+  coarsePointer: window.matchMedia('(pointer: coarse)').matches,
+  cores: navigator.hardwareConcurrency,
+  memory: navigator.deviceMemory,
+});
+
+// 目前實際生效的值：使用者沒選過的項目，用裝置與系統的狀態決定
+const currentTheme = () => resolveTheme(settings.theme, darkQuery.matches);
+const currentQuality = () => settings.quality ?? autoQuality;
+const currentReducedMotion = () => settings.reducedMotion ?? motionQuery.matches;
+const currentDisplay = () => ({
+  theme: settings.theme,
+  quality: currentQuality(),
+  reducedMotion: currentReducedMotion(),
+});
+
+function applyTheme() {
+  document.documentElement.dataset.theme = settings.theme;
+  view?.setTheme(currentTheme());
+}
+
+function applyMotion() {
+  document.documentElement.dataset.motion = currentReducedMotion() ? 'reduced' : 'full';
+  view?.setReducedMotion(currentReducedMotion());
+}
+
+// 系統的淺色／深色或動態效果設定改變時跟著更新
+darkQuery.addEventListener('change', applyTheme);
+motionQuery.addEventListener('change', applyMotion);
 
 // ---------- 語言 ----------
 const langButtons = document.querySelectorAll('.lang-button');
@@ -51,6 +97,10 @@ applyLanguage(detectLanguage(settings.language));
 
 // ---------- 遊戲流程 ----------
 let view = null;
+
+// 先套用介面主題，3D 畫面載入後會再套用一次
+applyTheme();
+applyMotion();
 let game = null;
 let seed = 0;
 let lastState = null;
@@ -125,7 +175,7 @@ function backToMenu() {
   game = null;
   view.clearGame();
   view.showWorld(previewWorld(settings.world));
-  ui.showMenu(settings, currentHighScore());
+  ui.showMenu(settings, currentHighScore(), currentDisplay());
   ui.updateHud(0, currentHighScore());
 }
 
@@ -171,6 +221,15 @@ const ui = createUI({
     const highScore = getHighScore(choice.world, choice.difficulty);
     ui.setMenuHighScore(highScore);
     ui.updateHud(0, highScore);
+  },
+  onDisplayChange(display) {
+    settings.theme = display.theme;
+    settings.quality = display.quality;
+    settings.reducedMotion = display.reducedMotion;
+    saveSettings(settings);
+    applyTheme();
+    applyMotion();
+    view?.setQuality(currentQuality());
   },
   onResume: togglePause,
   onRestart: newGame,
@@ -271,7 +330,11 @@ if (supportsWebGL2()) {
   // 支援時才載入 three.js，不支援的瀏覽器不用下載約 2 MB 的檔案
   try {
     const { createView } = await import('./render/scene.js');
-    view = createView(document.getElementById('stage'));
+    view = createView(document.getElementById('stage'), {
+      theme: currentTheme(),
+      quality: currentQuality(),
+      reducedMotion: currentReducedMotion(),
+    });
     view.start(onFrame);
     backToMenu();
   } catch {

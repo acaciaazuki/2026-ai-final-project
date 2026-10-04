@@ -7,7 +7,12 @@
     <link rel="stylesheet" href="css/style.css" />
     <!-- three.js 放在專案裡，用 import map 讓程式可以直接 import 'three' -->
     <script type="importmap">
-      { "imports": { "three": "./vendor/three/three.module.js" } }
+      {
+        "imports": {
+          "three": "./vendor/three/three.module.js",
+          "three/addons/": "./vendor/three/addons/"
+        }
+      }
     </script>
   </head>
   <body>
@@ -37,6 +42,7 @@
         </div>
         <div id="level-info" class="hud-item" hidden>
           <span id="wrap-indicator" class="wrap-indicator" role="img"></span>
+          <span id="layer-indicator" class="hud-label" hidden></span>
           <span id="hud-level-code" class="hud-label"></span>
         </div>
         <button
@@ -62,6 +68,17 @@
     <div id="menu-screen" class="overlay" hidden>
       <form id="menu-form" class="panel">
         <h2 class="panel-title" data-i18n="menu.title">遊戲設定</h2>
+        <fieldset class="options">
+          <legend class="visually-hidden" data-i18n="menu.world">世界</legend>
+          <label class="option">
+            <input type="radio" name="world" value="flat" />
+            <span data-i18n="world.flat">平面</span>
+          </label>
+          <label class="option">
+            <input type="radio" name="world" value="pit" />
+            <span data-i18n="world.pit">坑洞</span>
+          </label>
+        </fieldset>
         <fieldset class="options">
           <legend class="visually-hidden" data-i18n="menu.difficulty">難度</legend>
           <label class="option">
@@ -95,11 +112,11 @@
           <span data-i18n="menu.highScore">最高分：</span><span id="menu-high-score">0</span>
         </p>
         <button type="submit" class="button primary" data-i18n="menu.start">開始遊戲</button>
-        <p class="hint" data-i18n="menu.hint">方向鍵或 WASD 移動，空白鍵暫停</p>
+        <p id="menu-hint" class="hint" data-i18n="menu.hint">方向鍵或 WASD 移動，空白鍵暫停</p>
       </form>
     </div>
 
-    <!-- 開局提示：顯示本關的穿牆規則 -->
+    <!-- 開局提示：顯示本關的穿牆規則，坑洞則顯示升降按鍵 -->
     <div id="intro-screen" class="overlay overlay-light" hidden>
       <div class="panel">
         <p id="intro-mode" class="panel-text"></p>

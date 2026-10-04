@@ -11,6 +11,8 @@ const KEY_TO_DIRECTION = {
   KeyS: 'down',
   KeyA: 'left',
   KeyD: 'right',
+  KeyQ: 'rise', // 坑洞：上升一層
+  KeyE: 'sink', // 坑洞：下降一層
 };
 
 const PAUSE_KEYS = ['Space', 'KeyP', 'Escape'];

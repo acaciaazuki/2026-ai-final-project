@@ -10,6 +10,7 @@ import {
 } from './config.js';
 import { SEED_RANGE, mulberry32, weightedPick } from './random.js';
 import { createFlatWorld } from './worlds/flat.js';
+import { createPitWorld } from './worlds/pit.js';
 
 const WORLD_LETTERS = { flat: 'F', pit: 'B', cube: 'C' };
 const DIFFICULTY_LETTERS = { easy: 'E', normal: 'N', hard: 'H' };
@@ -36,13 +37,16 @@ export function decodeLevelCode(code) {
   };
 }
 
-// 依世界類型建立世界；平面世界的穿牆規則由種子亂數決定
+// 依世界類型建立世界；平面世界的穿牆規則由種子亂數決定，其他世界為 null
 function buildWorld(worldType, config, rng) {
   switch (worldType) {
     case 'flat': {
       const wrapRule = weightedPick(rng, config.wrapWeights);
       return { world: createFlatWorld({ ...WORLD_SIZES.flat, wrap: WRAP_RULES[wrapRule] }), wrapRule };
     }
+    case 'pit':
+      // 坑洞四周都是牆，沒有穿牆規則
+      return { world: createPitWorld(WORLD_SIZES.pit), wrapRule: null };
     default:
       throw new Error(`未知的世界類型：${worldType}`);
   }

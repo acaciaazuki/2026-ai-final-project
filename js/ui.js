@@ -29,14 +29,29 @@ export function createUI({ onStart, onMenuChange, onResume, onRestart, onNewLeve
 
   function readMenu() {
     const data = new FormData(menuForm);
-    return { difficulty: data.get('difficulty'), levelCode: data.get('levelCode').trim() };
+    return {
+      world: data.get('world'),
+      difficulty: data.get('difficulty'),
+      levelCode: data.get('levelCode').trim(),
+    };
+  }
+
+  // 主選單的操作說明依世界切換；改 data-i18n 讓切換語言時也跟著更新
+  function setMenuHint(world) {
+    const hint = $('menu-hint');
+    hint.dataset.i18n = world === 'pit' ? 'menu.hintPit' : 'menu.hint';
+    hint.textContent = t(hint.dataset.i18n);
   }
 
   menuForm.addEventListener('submit', (e) => {
     e.preventDefault();
     onStart(readMenu());
   });
-  menuForm.addEventListener('change', () => onMenuChange(readMenu()));
+  menuForm.addEventListener('change', () => {
+    const choice = readMenu();
+    setMenuHint(choice.world);
+    onMenuChange(choice);
+  });
   codeInput.addEventListener('input', () => {
     codeError.hidden = true;
   });
@@ -51,7 +66,9 @@ export function createUI({ onStart, onMenuChange, onResume, onRestart, onNewLeve
 
   return {
     showMenu(settings, highScore) {
+      menuForm.elements.world.value = settings.world;
       menuForm.elements.difficulty.value = settings.difficulty;
+      setMenuHint(settings.world);
       $('menu-high-score').textContent = highScore;
       // 清空上次輸入的代碼，避免沒注意到而一直重玩同一關
       codeInput.value = '';
@@ -74,14 +91,23 @@ export function createUI({ onStart, onMenuChange, onResume, onRestart, onNewLeve
       codeInput.focus();
     },
 
-    // 分數列上的關卡資訊：穿牆規則圖示與關卡代碼
+    // 分數列上的關卡資訊：平面顯示穿牆規則圖示，坑洞顯示目前層數，再加上關卡代碼
     setLevelInfo({ wrapRule, code }) {
       const indicator = $('wrap-indicator');
-      indicator.textContent = WRAP_ICONS[wrapRule];
-      indicator.title = t(`wrap.${wrapRule}`);
-      indicator.setAttribute('aria-label', t(`wrap.${wrapRule}`));
+      indicator.hidden = wrapRule === null;
+      $('layer-indicator').hidden = wrapRule !== null;
+      if (wrapRule !== null) {
+        indicator.textContent = WRAP_ICONS[wrapRule];
+        indicator.title = t(`wrap.${wrapRule}`);
+        indicator.setAttribute('aria-label', t(`wrap.${wrapRule}`));
+      }
       $('hud-level-code').textContent = code;
       $('level-info').hidden = false;
+    },
+
+    // 坑洞的層數，layer 從 1 開始（最上層）
+    setLayer(layer, depth) {
+      $('layer-indicator').textContent = t('hud.layer', { layer, depth });
     },
 
     showIntro({ worldType, difficulty, wrapRule, code }) {
@@ -89,7 +115,9 @@ export function createUI({ onStart, onMenuChange, onResume, onRestart, onNewLeve
         world: t(`world.${worldType}`),
         difficulty: t(`difficulty.${difficulty}`),
       });
-      $('intro-rule').textContent = t('intro.rule', { rule: t(`wrap.${wrapRule}`) });
+      // 坑洞沒有穿牆規則，改提示升降按鍵
+      $('intro-rule').textContent =
+        wrapRule === null ? t('intro.pit') : t('intro.rule', { rule: t(`wrap.${wrapRule}`) });
       $('intro-code').textContent = t('levelCode', { code });
       showScreen('intro');
       stage.focus({ preventScroll: true });

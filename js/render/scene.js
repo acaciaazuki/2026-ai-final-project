@@ -1,9 +1,15 @@
 // 3D 畫面：渲染器、燈光、地圖與物件，每一幀依遊戲狀態更新
 import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { createActors } from './actors.js';
 import { createBoard } from './board.js';
-import { fitFlatCamera } from './cameras.js';
+import { PIT_VIEW, fitFlatCamera, fitPitCamera, pitTarget } from './cameras.js';
 import { COLORS } from './colors.js';
+import { createGuides } from './guides.js';
+
+// 坑洞可以轉動視角的範圍（以預設視角為中心）
+const PIT_AZIMUTH_LIMIT = Math.PI / 4; // 左右各 45 度
+const PIT_POLAR_RANGE = [THREE.MathUtils.degToRad(12), THREE.MathUtils.degToRad(55)]; // 與正上方的夾角
 
 export function createView(container) {
   const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -27,7 +33,32 @@ export function createView(container) {
 
   const board = createBoard(scene, COLORS);
   const actors = createActors(scene, COLORS);
+  const guides = createGuides(scene, COLORS);
   let world = null;
+
+  // 坑洞可以用滑鼠右鍵拖曳或雙指旋轉視角；不提供縮放與平移，
+  // 左鍵與單指保留給之後的手機滑動操作
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.mouseButtons = { LEFT: null, MIDDLE: null, RIGHT: THREE.MOUSE.ROTATE };
+  controls.touches = { ONE: null, TWO: THREE.TOUCH.DOLLY_ROTATE };
+  controls.enableZoom = false;
+  controls.enablePan = false;
+  controls.minAzimuthAngle = -PIT_AZIMUTH_LIMIT;
+  controls.maxAzimuthAngle = PIT_AZIMUTH_LIMIT;
+  [controls.minPolarAngle, controls.maxPolarAngle] = PIT_POLAR_RANGE;
+  controls.enabled = false;
+
+  // 依世界擺放鏡頭；keepAngle 為 true 時保留玩家轉過的角度（例如視窗縮放時）
+  function fitCamera(keepAngle = false) {
+    if (world.type === 'pit') {
+      const direction = keepAngle ? camera.position.clone().sub(controls.target) : PIT_VIEW;
+      fitPitCamera(camera, world, direction);
+      controls.target.copy(pitTarget(world));
+      controls.update();
+    } else {
+      fitFlatCamera(camera, world);
+    }
+  }
 
   // 依容器大小調整畫面與攝影機，避免畫面變形
   function resize() {
@@ -36,7 +67,7 @@ export function createView(container) {
     renderer.setSize(width, height, false);
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
-    if (world) fitFlatCamera(camera, world);
+    if (world) fitCamera(true);
   }
   new ResizeObserver(resize).observe(container);
   resize();
@@ -48,7 +79,9 @@ export function createView(container) {
     showWorld(next) {
       world = next;
       board.build(world);
-      fitFlatCamera(camera, world);
+      guides.build(world);
+      controls.enabled = world.type === 'pit';
+      fitCamera();
     },
 
     // 開始新的一局
@@ -60,6 +93,7 @@ export function createView(container) {
     // 回到主選單：只留下地圖
     clearGame() {
       actors.clear();
+      guides.hide();
     },
 
     // 主迴圈：每一幀先呼叫 onFrame 取得目前的遊戲，再更新畫面
@@ -67,6 +101,9 @@ export function createView(container) {
       renderer.setAnimationLoop((time) => {
         const game = onFrame(time);
         actors.update(game, time, motionQuery.matches);
+        if (game && game.world === world) {
+          guides.update(actors.headPosition, actors.hasFood() ? actors.foodPosition : null, game.snake[0].z);
+        }
         renderer.render(scene, camera);
       });
     },

@@ -8,9 +8,11 @@ export default {
   'hud.score': 'Score',
   'hud.highScore': 'Best',
   'hud.pause': 'Pause',
+  'hud.layer': 'Layer {layer} of {depth}',
 
   // 主選單
   'menu.title': 'Game settings',
+  'menu.world': 'World',
   'menu.difficulty': 'Difficulty',
   'menu.language': 'Language',
   'menu.levelCode': 'Level code (optional)',
@@ -20,9 +22,12 @@ export default {
   'menu.highScore': 'Best: ',
   'menu.start': 'Start',
   'menu.hint': 'Arrow keys or WASD to move, Space to pause',
+  'menu.hintPit':
+    'Arrow keys or WASD to move, Q to rise, E to sink, Space to pause. Right-drag to rotate the view',
 
   // 世界與難度
   'world.flat': 'Flat',
+  'world.pit': 'Pit',
   'difficulty.easy': 'Easy',
   'difficulty.normal': 'Normal',
   'difficulty.hard': 'Hard',
@@ -36,6 +41,7 @@ export default {
   // 開局提示
   'intro.mode': '{world} · {difficulty}',
   'intro.rule': 'This level: {rule}',
+  'intro.pit': 'Q to rise, E to sink',
   levelCode: 'Level code {code}',
 
   // 暫停畫面
@@ -54,6 +60,7 @@ export default {
 
   // 螢幕閱讀器朗讀的訊息
   'announce.score': 'Score {score}',
+  'announce.layer': 'Layer {layer}',
   'announce.over': 'Game over. Score {score}',
   'announce.won': 'You win! Score {score}',
 

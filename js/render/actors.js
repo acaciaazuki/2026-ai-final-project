@@ -8,17 +8,41 @@ const VANISH_MS = 200; // 被吃掉的食物縮小消失的時間
 // 兩點距離超過這個值，代表是穿牆，不做內插、直接出現在另一邊
 const WRAP_DISTANCE = 1.5;
 
+// 坑洞各層的顏色（由上往下），讓玩家一眼看出每一節在第幾層
+export const LAYER_COLORS = ['#ffe066', '#9be15d', '#36cfc9', '#4c8dff', '#9b5de5'];
+
+// 物件放在格子底面往 up 方向 height 的位置
+function placeOnCell(target, p, height) {
+  return target.set(p.x + p.up.x * height, p.y + p.up.y * height, p.z + p.up.z * height);
+}
+
 export function createActors(scene, colors) {
   const segmentGeometry = new THREE.BoxGeometry(SEGMENT_SIZE, SEGMENT_SIZE, SEGMENT_SIZE);
-  const bodyMaterial = new THREE.MeshStandardMaterial({ color: colors.snakeBody, roughness: 0.5 });
+  // 蛇身的顏色由每一節的 instance color 決定，材質本身用白色
+  const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5 });
+  const layerColors = LAYER_COLORS.map((c) => new THREE.Color(c));
+  const bodyColor = new THREE.Color(colors.snakeBody);
+  const headColor = new THREE.Color(colors.snakeHead);
+  const tint = new THREE.Color();
   const obstacleGeometry = new THREE.BoxGeometry(0.92, 0.92, 0.92);
-  const obstacleMaterial = new THREE.MeshStandardMaterial({ color: colors.obstacle, roughness: 0.7 });
+  // 障礙物的顏色同樣由 instance color 決定；坑洞裡比蛇頭高的障礙物改用半透明的材質
+  const obstacleMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.7 });
+  const ghostMaterial = new THREE.MeshStandardMaterial({
+    color: 0xffffff,
+    roughness: 0.7,
+    transparent: true,
+    opacity: 0.22,
+    depthWrite: false,
+  });
+  const obstacleColor = new THREE.Color(colors.obstacle);
+  const backgroundColor = new THREE.Color(colors.background);
   const foodGeometry = new THREE.SphereGeometry(0.36, 24, 16);
   const foodMaterial = new THREE.MeshStandardMaterial({ color: colors.food, roughness: 0.35 });
 
   // 蛇頭：方塊加兩隻眼睛，模型的前方是 +x
   const head = new THREE.Group();
-  const headBox = new THREE.Mesh(segmentGeometry, new THREE.MeshStandardMaterial({ color: colors.snakeHead }));
+  const headMaterial = new THREE.MeshStandardMaterial({ color: colors.snakeHead });
+  const headBox = new THREE.Mesh(segmentGeometry, headMaterial);
   headBox.castShadow = true;
   head.add(headBox);
   const eyeGeometry = new THREE.SphereGeometry(0.12, 12, 8);
@@ -40,8 +64,14 @@ export function createActors(scene, colors) {
 
   let body = null;
   let obstacles = null;
+  let ghosts = null;
+  let obstacleCells = [];
+  let ghostLayer = null; // 目前以哪一層為界切換半透明
   let world = null;
   let heading = 0; // 蛇頭繞 y 軸的角度
+  // 蛇頭與食物目前的中心位置，給坑洞的輔助線使用
+  const headPosition = new THREE.Vector3();
+  const foodPosition = new THREE.Vector3();
   let foodKey = null;
   let foodBornAt = -Infinity;
   let vanishAt = -Infinity;
@@ -61,23 +91,21 @@ export function createActors(scene, colors) {
     world = game.world;
     removeInstanced(body);
     removeInstanced(obstacles);
+    removeInstanced(ghosts);
 
     body = new THREE.InstancedMesh(segmentGeometry, bodyMaterial, world.cells().length);
     body.castShadow = true;
     body.count = 0;
 
-    obstacles = new THREE.InstancedMesh(obstacleGeometry, obstacleMaterial, Math.max(game.obstacles.length, 1));
-    obstacles.count = game.obstacles.length;
+    const capacity = Math.max(game.obstacles.length, 1);
+    obstacles = new THREE.InstancedMesh(obstacleGeometry, obstacleMaterial, capacity);
     obstacles.castShadow = true;
     obstacles.receiveShadow = true;
-    game.obstacles.forEach((cell, i) => {
-      const p = world.toPosition(cell);
-      dummy.position.set(p.x, 0.46, p.z);
-      dummy.rotation.set(0, 0, 0);
-      dummy.updateMatrix();
-      obstacles.setMatrixAt(i, dummy.matrix);
-    });
-    scene.add(body, obstacles);
+    ghosts = new THREE.InstancedMesh(obstacleGeometry, ghostMaterial, capacity);
+    obstacleCells = game.obstacles;
+    ghostLayer = null;
+    layoutObstacles(world.type === 'pit' ? game.snake[0].z : 0);
+    scene.add(body, obstacles, ghosts);
 
     // 蛇頭的初始角度：朝出生時的方向
     const start = world.toPosition(game.snake[0]);
@@ -89,29 +117,58 @@ export function createActors(scene, colors) {
     foodKey = null;
     vanishAt = -Infinity;
     head.visible = true;
+    headMaterial.color.copy(headColor);
   }
 
   // 回到主選單時隱藏所有會動的物件
   function clear() {
     removeInstanced(body);
     removeInstanced(obstacles);
+    removeInstanced(ghosts);
     body = null;
     obstacles = null;
+    ghosts = null;
     head.visible = false;
     food.visible = false;
     vanishing.visible = false;
   }
 
-  // 第 i 節在兩格之間的位置：從上一步的位置內插到現在的位置
+  // 擺放障礙物；坑洞裡越深的顏色越暗，比蛇頭所在層更高的改成半透明，才不會擋住蛇
+  function layoutObstacles(headLayer) {
+    ghostLayer = headLayer;
+    obstacles.count = 0;
+    ghosts.count = 0;
+    for (const cell of obstacleCells) {
+      const isPit = world.type === 'pit';
+      const mesh = isPit && cell.z < headLayer ? ghosts : obstacles;
+      placeOnCell(dummy.position, world.toPosition(cell), 0.46);
+      dummy.rotation.set(0, 0, 0);
+      dummy.updateMatrix();
+      mesh.setMatrixAt(mesh.count, dummy.matrix);
+      const shade = isPit ? (cell.z / world.depth) * 0.55 : 0;
+      mesh.setColorAt(mesh.count, tint.copy(obstacleColor).lerp(backgroundColor, shade));
+      mesh.count++;
+    }
+    for (const mesh of [obstacles, ghosts]) {
+      mesh.instanceMatrix.needsUpdate = true;
+      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+    }
+  }
+
+  // 第 i 節在兩格之間的中心位置：從上一步的位置內插到現在的位置
+  // dx、dz 是水平移動量，用來決定蛇頭的朝向；升降時為 0
   function segmentPosition(game, i, t) {
-    const to = world.toPosition(game.snake[i]);
+    const to = placeOnCell(new THREE.Vector3(), world.toPosition(game.snake[i]), SEGMENT_SIZE / 2);
     const fromCell = game.previous[Math.min(i, game.previous.length - 1)];
-    const from = world.toPosition(fromCell);
+    const from = placeOnCell(new THREE.Vector3(), world.toPosition(fromCell), SEGMENT_SIZE / 2);
     const dx = to.x - from.x;
     const dz = to.z - from.z;
-    if (Math.hypot(dx, dz) > WRAP_DISTANCE) return { x: to.x, z: to.z, dx: 0, dz: 0 };
-    return { x: from.x + dx * t, z: from.z + dz * t, dx, dz };
+    if (from.distanceTo(to) > WRAP_DISTANCE) return { position: to, dx: 0, dz: 0 };
+    return { position: from.lerp(to, t), dx, dz };
   }
+
+  // 坑洞依層數上色，其他世界維持原本的顏色
+  const layerColor = (cell, fallback) => (world.type === 'pit' ? layerColors[cell.z] : fallback);
 
   // 每一幀依遊戲狀態更新位置與動畫
   function update(game, time, reducedMotion) {
@@ -121,19 +178,24 @@ export function createActors(scene, colors) {
     // 蛇頭
     const h = segmentPosition(game, 0, t);
     if (h.dx !== 0 || h.dz !== 0) heading = angleOf(h.dx, h.dz);
-    head.position.set(h.x, SEGMENT_SIZE / 2, h.z);
+    head.position.copy(h.position);
     head.rotation.set(0, heading, 0);
+    headPosition.copy(h.position);
+    if (world.type === 'pit' && game.snake[0].z !== ghostLayer) layoutObstacles(game.snake[0].z);
+    // 坑洞的蛇頭混入一點所在層的顏色，深色的頭仍然和蛇身有區別
+    if (world.type === 'pit') headMaterial.color.copy(headColor).lerp(tint.copy(layerColors[game.snake[0].z]), 0.35);
 
     // 蛇身
     body.count = game.snake.length - 1;
     for (let i = 1; i < game.snake.length; i++) {
-      const p = segmentPosition(game, i, t);
-      dummy.position.set(p.x, SEGMENT_SIZE / 2, p.z);
+      dummy.position.copy(segmentPosition(game, i, t).position);
       dummy.rotation.set(0, 0, 0);
       dummy.updateMatrix();
       body.setMatrixAt(i - 1, dummy.matrix);
+      body.setColorAt(i - 1, layerColor(game.snake[i], bodyColor));
     }
     body.instanceMatrix.needsUpdate = true;
+    if (body.instanceColor) body.instanceColor.needsUpdate = true;
 
     // 食物：換位置時，舊的縮小消失、新的彈出來
     const key = game.food ? world.key(game.food) : null;
@@ -153,7 +215,8 @@ export function createActors(scene, colors) {
       const grow = Math.min((time - foodBornAt) / POP_MS, 1);
       // 彈出時稍微超過原本大小再回來，看起來比較有彈性
       const scale = grow >= 1 ? 1 : Math.sin(grow * Math.PI * 0.75) / Math.sin(Math.PI * 0.75);
-      food.position.set(p.x, 0.42 + bob, p.z);
+      placeOnCell(food.position, p, 0.42 + bob);
+      placeOnCell(foodPosition, p, 0.42);
       food.scale.setScalar(Math.max(scale, 0.01));
     }
 
@@ -163,5 +226,12 @@ export function createActors(scene, colors) {
   }
 
   clear();
-  return { setGame, clear, update };
+  return {
+    setGame,
+    clear,
+    update,
+    headPosition,
+    foodPosition,
+    hasFood: () => food.visible,
+  };
 }

@@ -7,6 +7,13 @@ export const WORLD_SIZES = {
   cube: { size: 10 }, // 立方體：每面 10×10
 };
 
+// 各世界的速度倍率：移動間隔乘上這個值，數值越大越慢
+// 坑洞要同時判斷深度，給玩家多一點反應時間
+export const WORLD_SPEED_FACTORS = { flat: 1, pit: 1.4, cube: 1 };
+
+// 目前開放的世界，依主選單的顯示順序排列
+export const AVAILABLE_WORLDS = ['flat', 'pit'];
+
 // 蛇的初始長度
 export const START_LENGTH = 3;
 

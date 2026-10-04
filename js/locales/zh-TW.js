@@ -9,9 +9,11 @@ export default {
   'hud.score': '分數',
   'hud.highScore': '最高分',
   'hud.pause': '暫停',
+  'hud.layer': '第 {layer} 層／共 {depth} 層',
 
   // 主選單
   'menu.title': '遊戲設定',
+  'menu.world': '世界',
   'menu.difficulty': '難度',
   'menu.language': '語言',
   'menu.levelCode': '關卡代碼（選填）',
@@ -21,9 +23,11 @@ export default {
   'menu.highScore': '最高分：',
   'menu.start': '開始遊戲',
   'menu.hint': '方向鍵或 WASD 移動，空白鍵暫停',
+  'menu.hintPit': '方向鍵或 WASD 移動，Q 上升、E 下降，空白鍵暫停；按住滑鼠右鍵拖曳可轉動視角',
 
   // 世界與難度
   'world.flat': '平面',
+  'world.pit': '坑洞',
   'difficulty.easy': '簡單',
   'difficulty.normal': '普通',
   'difficulty.hard': '困難',
@@ -37,6 +41,7 @@ export default {
   // 開局提示
   'intro.mode': '{world}・{difficulty}',
   'intro.rule': '本關：{rule}',
+  'intro.pit': 'Q 上升、E 下降',
   levelCode: '關卡代碼 {code}',
 
   // 暫停畫面
@@ -55,6 +60,7 @@ export default {
 
   // 螢幕閱讀器朗讀的訊息
   'announce.score': '分數 {score}',
+  'announce.layer': '第 {layer} 層',
   'announce.over': '遊戲結束，分數 {score}',
   'announce.won': '恭喜破關，分數 {score}',
 

@@ -18,6 +18,10 @@ export function createUI({ onStart, onMenuChange, onDisplayChange, onResume, onR
   const codeError = $('level-code-error');
   const stage = $('stage');
   const pauseButton = $('pause-button');
+  const touchControls = $('touch-controls');
+  // 觸控裝置的操作說明不同
+  const isTouch = window.matchMedia('(pointer: coarse)').matches;
+  let pitActive = false; // 目前這局是否為坑洞（才顯示上升、下降按鈕）
 
   // 只顯示指定的畫面；name 為 null 時全部隱藏（遊戲進行中）
   function showScreen(name) {
@@ -25,6 +29,7 @@ export function createUI({ onStart, onMenuChange, onDisplayChange, onResume, onR
       el.hidden = key !== name;
     }
     pauseButton.hidden = name !== null;
+    touchControls.hidden = name !== null || !pitActive;
   }
 
   function readMenu() {
@@ -48,7 +53,9 @@ export function createUI({ onStart, onMenuChange, onDisplayChange, onResume, onR
   // 主選單的操作說明依世界切換；改 data-i18n 讓切換語言時也跟著更新
   function setMenuHint(world) {
     const hint = $('menu-hint');
-    const hints = { flat: 'menu.hint', pit: 'menu.hintPit', cube: 'menu.hintCube' };
+    const hints = isTouch
+      ? { flat: 'menu.hintTouch', pit: 'menu.hintPitTouch', cube: 'menu.hintCubeTouch' }
+      : { flat: 'menu.hint', pit: 'menu.hintPit', cube: 'menu.hintCube' };
     hint.dataset.i18n = hints[world];
     hint.textContent = t(hint.dataset.i18n);
   }
@@ -80,6 +87,11 @@ export function createUI({ onStart, onMenuChange, onDisplayChange, onResume, onR
   pauseButton.addEventListener('click', onPause);
 
   return {
+    // 目前這局的世界；回主選單時傳入 null
+    setActiveWorld(type) {
+      pitActive = type === 'pit';
+    },
+
     showMenu(settings, highScore, display) {
       menuForm.elements.world.value = settings.world;
       menuForm.elements.difficulty.value = settings.difficulty;

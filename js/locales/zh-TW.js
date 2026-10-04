@@ -27,6 +27,12 @@ export default {
   'menu.hintCube': '← → 或 A D 左轉、右轉，空白鍵暫停',
   'menu.hintPit': '方向鍵或 WASD 移動，Q 上升、E 下降，空白鍵暫停；按住滑鼠右鍵拖曳可轉動視角',
 
+  'menu.hintTouch': '在畫面上滑動轉彎，點右上角按鈕暫停',
+  'menu.hintPitTouch': '在畫面上滑動前後左右，按下方按鈕上升、下降；雙指轉動可旋轉視角',
+  'menu.hintCubeTouch': '點畫面左半邊左轉、右半邊右轉',
+  'touch.rise': '上升',
+  'touch.sink': '下降',
+
   // 顯示設定
   'display.title': '顯示設定',
   'display.theme': '主題',

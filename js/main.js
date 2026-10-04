@@ -11,7 +11,7 @@ import {
 } from './config.js';
 import { Game, STATE } from './game.js';
 import { LANGUAGES, detectLanguage, getLanguage, setLanguage, t } from './i18n.js';
-import { bindKeyboard } from './input.js';
+import { bindButtons, bindKeyboard, bindTouch } from './input.js';
 import { decodeLevelCode, encodeLevelCode, generateLevel } from './level.js';
 import { mulberry32, randomSeed } from './random.js';
 import { QUALITY_NAMES, detectQuality } from './render/quality.js';
@@ -166,6 +166,7 @@ function newGame() {
   });
   lastState = null;
   lastScore = -1;
+  ui.setActiveWorld(settings.world);
   view.setGame(game);
   refreshLevelInfo();
   game.start();
@@ -173,6 +174,7 @@ function newGame() {
 
 function backToMenu() {
   game = null;
+  ui.setActiveWorld(null);
   view.clearGame();
   view.showWorld(previewWorld(settings.world));
   ui.showMenu(settings, currentHighScore(), currentDisplay());
@@ -241,10 +243,19 @@ const ui = createUI({
   onPause: togglePause,
 });
 
-bindKeyboard({
-  onDirection: (direction) => game?.queueDirection(direction),
-  onPause: togglePause,
+const onDirection = (direction) => game?.queueDirection(direction);
+bindKeyboard({ onDirection, onPause: togglePause });
+bindTouch(document.getElementById('stage'), {
+  getWorldType: () => game?.world.type,
+  onDirection,
 });
+bindButtons(
+  [
+    [document.getElementById('rise-button'), 'rise'],
+    [document.getElementById('sink-button'), 'sink'],
+  ],
+  onDirection,
+);
 
 // 切換到其他分頁或縮小視窗時自動暫停
 document.addEventListener('visibilitychange', () => {

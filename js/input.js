@@ -38,3 +38,63 @@ export function bindKeyboard({ onDirection, onPause }) {
     }
   });
 }
+
+// 觸控操作
+// 平面與坑洞：在畫面上滑動（往滑動的方向轉彎，連續滑動可以連續轉彎）
+// 立方體：點畫面左半邊左轉、右半邊右轉
+const SWIPE_DISTANCE = 28; // 滑動超過這個距離（像素）才算一次轉向
+
+export function bindTouch(element, { getWorldType, onDirection }) {
+  const touches = new Set();
+  let gesture = null;
+
+  element.addEventListener('pointerdown', (e) => {
+    if (e.pointerType !== 'touch') return;
+    touches.add(e.pointerId);
+    // 兩根手指是轉動坑洞視角，不當作操作
+    if (touches.size > 1) {
+      gesture = null;
+      return;
+    }
+    if (getWorldType() === 'cube') {
+      const rect = element.getBoundingClientRect();
+      onDirection(e.clientX < rect.left + rect.width / 2 ? 'left' : 'right');
+      return;
+    }
+    gesture = { id: e.pointerId, x: e.clientX, y: e.clientY };
+  });
+
+  element.addEventListener('pointermove', (e) => {
+    if (!gesture || gesture.id !== e.pointerId) return;
+    const dx = e.clientX - gesture.x;
+    const dy = e.clientY - gesture.y;
+    if (Math.max(Math.abs(dx), Math.abs(dy)) < SWIPE_DISTANCE) return;
+    if (Math.abs(dx) > Math.abs(dy)) onDirection(dx > 0 ? 'right' : 'left');
+    else onDirection(dy > 0 ? 'down' : 'up');
+    // 以這個位置當作下一次滑動的起點
+    gesture.x = e.clientX;
+    gesture.y = e.clientY;
+  });
+
+  const end = (e) => {
+    touches.delete(e.pointerId);
+    if (gesture?.id === e.pointerId) gesture = null;
+  };
+  element.addEventListener('pointerup', end);
+  element.addEventListener('pointercancel', end);
+}
+
+// 坑洞的上升、下降按鈕：按下就立刻觸發，不等放開
+export function bindButtons(buttons, onDirection) {
+  for (const [button, direction] of buttons) {
+    button.addEventListener('pointerdown', (e) => {
+      // 不讓按鈕搶走焦點，也避免連點時觸發縮放
+      e.preventDefault();
+      onDirection(direction);
+    });
+    // 鍵盤使用者按 Enter 或空白鍵時也能操作
+    button.addEventListener('click', (e) => {
+      if (e.detail === 0) onDirection(direction);
+    });
+  }
+}

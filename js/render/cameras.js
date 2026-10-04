@@ -59,8 +59,14 @@ const FOLLOW_LOOK_AHEAD = new THREE.Vector3(2, 0, 0);
 const followUp = new THREE.Vector3();
 const followTarget = new THREE.Vector3();
 
+// 畫面至少要看到這麼寬（格數），直向手機太窄時鏡頭會自動拉遠
+const FOLLOW_MIN_WIDTH = 11.5;
+
 export function followCubeCamera(camera, headPosition, headQuaternion) {
-  camera.position.copy(FOLLOW_OFFSET).applyQuaternion(headQuaternion).add(headPosition);
+  const distance = FOLLOW_OFFSET.length();
+  const width = 2 * distance * Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2) * camera.aspect;
+  const zoomOut = Math.max(1, FOLLOW_MIN_WIDTH / width);
+  camera.position.copy(FOLLOW_OFFSET).multiplyScalar(zoomOut).applyQuaternion(headQuaternion).add(headPosition);
   followTarget.copy(FOLLOW_LOOK_AHEAD).applyQuaternion(headQuaternion).add(headPosition);
   camera.up.copy(followUp.set(0, 1, 0).applyQuaternion(headQuaternion));
   camera.lookAt(followTarget);

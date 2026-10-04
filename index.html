@@ -2,8 +2,9 @@
 <html lang="zh-TW">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>貪食蛇 3D</title>
+    <link rel="icon" href="data:," />
     <link rel="stylesheet" href="css/style.css" />
     <!-- three.js 放在專案裡，用 import map 讓程式可以直接 import 'three' -->
     <script type="importmap">
@@ -207,6 +208,16 @@
           這個瀏覽器不支援 WebGL 2，請改用最新版的 Chrome、Edge、Firefox 或 Safari。
         </p>
       </div>
+    </div>
+
+    <!-- 手機操作按鈕：只有坑洞需要（上升、下降） -->
+    <div id="touch-controls" class="touch-controls" hidden>
+      <button id="rise-button" type="button" class="touch-button" aria-label="上升" data-i18n-aria-label="touch.rise">
+        ▲<span data-i18n="touch.rise">上升</span>
+      </button>
+      <button id="sink-button" type="button" class="touch-button" aria-label="下降" data-i18n-aria-label="touch.sink">
+        ▼<span data-i18n="touch.sink">下降</span>
+      </button>
     </div>
 
     <!-- 給螢幕閱讀器朗讀的訊息 -->

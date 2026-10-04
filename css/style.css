@@ -1,0 +1,126 @@
+/* 介面配色：之後由 3D 主題覆寫這些變數 */
+:root {
+  --color-bg: #15181c;
+  --color-surface: #252a31;
+  --color-text: #e8eaed;
+  --color-muted: #a0a7af;
+  --color-accent: #66bb6a;
+  --color-accent-text: #0d1a0e;
+  --color-border: #3a414a;
+  --font-ui: system-ui, -apple-system, "PingFang TC", "Microsoft JhengHei", sans-serif;
+  --radius: 8px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow: hidden;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-ui);
+}
+
+/* 3D 畫面鋪滿整個視窗，介面疊在上面 */
+.stage {
+  position: fixed;
+  inset: 0;
+}
+
+.stage canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.topbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 16px;
+  pointer-events: none;
+}
+
+/* 只有按鈕可以點，其餘區域讓滑鼠與觸控穿透到 3D 畫面 */
+.topbar > * {
+  pointer-events: auto;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.lang-switch {
+  display: flex;
+  gap: 6px;
+}
+
+.lang-button {
+  padding: 6px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.lang-button[aria-pressed="true"] {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+  color: var(--color-accent-text);
+}
+
+.lang-button:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* 提示畫面（例如不支援 WebGL） */
+.notice {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  padding: 16px;
+}
+
+.notice[hidden] {
+  display: none;
+}
+
+.panel {
+  margin: auto;
+  width: min(100%, 360px);
+  padding: 20px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  text-align: center;
+}
+
+.panel-title {
+  margin: 0 0 8px;
+  font-size: 1.3rem;
+}
+
+.panel-text {
+  margin: 0;
+  line-height: 1.6;
+}
+
+@media (max-width: 480px) {
+  .title {
+    font-size: 1.2rem;
+  }
+}

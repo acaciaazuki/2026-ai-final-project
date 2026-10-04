@@ -30,9 +30,3 @@ python3 -m http.server 8000
 ## 文件
 
 - [技術棧與實作計畫](docs/PLAN.md)
-
-## 測試
-
-```bash
-for t in test/*.test.js; do node $t; done
-```

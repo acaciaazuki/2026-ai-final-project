@@ -38,6 +38,8 @@ export class Game {
 
     this.direction = level.spawn.direction;
     this.snake = buildSnake(this.world, level.spawn, startLength);
+    // 上一步的蛇身位置，繪圖時用來在兩格之間平滑移動
+    this.previous = this.snake.slice();
     this.inputQueue = [];
     this.score = 0;
     this.won = false;
@@ -117,6 +119,7 @@ export class Game {
       return;
     }
 
+    this.previous = this.snake.slice();
     this.snake.unshift(head);
     if (!eating) {
       this.snake.pop();
@@ -131,6 +134,13 @@ export class Game {
       this.won = true;
       this.state = STATE.OVER;
     }
+  }
+
+  // 距離上一次移動經過了多少比例的移動間隔（0 到 1），繪圖時用來內插位置
+  // 暫停時維持暫停當下的比例；遊戲結束時停在最後的位置
+  progress() {
+    if (this.state === STATE.OVER) return 1;
+    return Math.min(this.elapsed / this.tickMs, 1);
   }
 
   isObstacle(cell) {

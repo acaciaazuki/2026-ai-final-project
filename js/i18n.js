@@ -31,7 +31,6 @@ export function t(key, params = {}) {
 export function setLanguage(lang) {
   current = LANGUAGES.includes(lang) ? lang : FALLBACK;
   document.documentElement.lang = current;
-  document.title = t('title');
 
   // data-i18n：替換元素的文字內容
   for (const el of document.querySelectorAll('[data-i18n]')) {

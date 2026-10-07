@@ -83,6 +83,8 @@ js/
 │   └── cube.js          立方體世界
 ├── render/
 │   ├── scene.js         渲染器、燈光、畫質設定、後製特效
+│   ├── quality.js       畫質等級與依裝置自動選擇
+│   ├── board.js         地板、格線、牆壁、通道、坑壁與立方體的面
 │   ├── actors.js        蛇、食物、障礙物（InstancedMesh、平滑移動）
 │   ├── cameras.js       三種世界的鏡頭
 │   └── guides.js        坑洞投影輔助、立方體面提示

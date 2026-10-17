@@ -1,7 +1,7 @@
 // 台灣正體中文介面文字
 // {名稱} 是會被代入的變數，例如 {score} 會換成分數
 export default {
-  title: '貪食蛇 3D',
+  title: '期末考 貪食蛇 3D',
   'board.label': '遊戲畫面',
 
   // 分數列
